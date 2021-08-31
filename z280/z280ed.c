@@ -158,8 +158,8 @@ OP(ed,80) { illegal_2(cpustate);                                            } /*
 OP(ed,81) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,82) { INIW;                                                           } /* INIW             */
 OP(ed,83) { OUTIW;                                                          } /* OUTIW            */
-OP(ed,84) { LOG("unimplemented EPU opcode");EASP16(cpustate);               } /* EPUM (SP+w)      */
-OP(ed,85) { LOG("unimplemented EPU opcode");EASP16(cpustate);               } /* MEPU (SP+w)      */
+OP(ed,84) { LOG("unimplemented EPU opcode\n");EASP16(cpustate);cpustate->_PC+=4;             } /* EPUM (SP+w)      */
+OP(ed,85) { LOG("unimplemented EPU opcode\n");EASP16(cpustate);cpustate->_PC+=4;             } /* MEPU (SP+w)      */
 OP(ed,86) { cpustate->ea = cpustate->_HL; LDUD_A_M;                         } /* LDUD A,(HL)      */
 OP(ed,87) { cpustate->_HL = cpustate->_USP;                                 } /* LDCTL HL,USP     */
 
@@ -167,8 +167,8 @@ OP(ed,88) { illegal_2(cpustate);                                            } /*
 OP(ed,89) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,8a) { INDW;                                                           } /* INDW             */
 OP(ed,8b) { OUTDW;                                                          } /* OUTDW            */
-OP(ed,8c) { LOG("unimplemented EPU opcode\n");                              } /* EPUM (HL+IX)     */
-OP(ed,8d) { LOG("unimplemented EPU opcode\n");                              } /* MEPU (HL+IX)     */
+OP(ed,8c) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (HL+IX)     */
+OP(ed,8d) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (HL+IX)     */
 OP(ed,8e) { cpustate->ea = cpustate->_HL; LDUD_M_A;                         } /* LDUD (HL),A      */
 OP(ed,8f) { cpustate->_USP = cpustate->_HL;                                 } /* LDCTL USP,HL     */
 
@@ -176,44 +176,44 @@ OP(ed,90) { illegal_2(cpustate);                                            } /*
 OP(ed,91) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,92) { INIRW;                                                          } /* INIRW            */
 OP(ed,93) { OTIRW;                                                          } /* OTIRW            */
-OP(ed,94) { LOG("unimplemented EPU opcode\n");                              } /* EPUM (HL+IY)     */
-OP(ed,95) { LOG("unimplemented EPU opcode\n");                              } /* MEPU (HL+IX)     */
+OP(ed,94) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (HL+IY)     */
+OP(ed,95) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (HL+IX)     */
 OP(ed,96) { cpustate->ea = cpustate->_HL; LDUP_A_M;                         } /* LDUP A,(HL)      */
-OP(ed,97) { LOG("unimplemented EPU opcode\n");                              } /* EPUF             */
+OP(ed,97) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUF             */
 
 OP(ed,98) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,99) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,9a) { INDRW;                                                          } /* INDRW            */
 OP(ed,9b) { OTDRW;                                                          } /* OTDRW            */
-OP(ed,9c) { LOG("unimplemented EPU opcode\n");                              } /* EPUM (IX+IY)     */
-OP(ed,9d) { LOG("unimplemented EPU opcode\n");                              } /* MEPU (IX+IY)     */
+OP(ed,9c) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (IX+IY)     */
+OP(ed,9d) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (IX+IY)     */
 OP(ed,9e) { cpustate->ea = cpustate->_HL; LDUP_M_A;                         } /* LDUP (HL),A      */
-OP(ed,9f) { LOG("unimplemented EPU opcode\n");                              } /* EPUI             */
+OP(ed,9f) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUI             */
 
 OP(ed,a0) { LDI;                                                    } /* LDI              */
 OP(ed,a1) { CPI;                                                    } /* CPI              */
 OP(ed,a2) { INI;                                                    } /* INI              */
 OP(ed,a3) { OUTI;                                                   } /* OUTI             */
-OP(ed,a4) { LOG("unimplemented EPU opcode\n");EARA(cpustate);               } /* EPUM (ra)        */
-OP(ed,a5) { LOG("unimplemented EPU opcode\n");EARA(cpustate);               } /* MEPU (ra)        */
-OP(ed,a6) { LOG("unimplemented EPU opcode\n");                              } /* EPUM (HL)        */
-OP(ed,a7) { LOG("unimplemented EPU opcode\n");cpustate->ea = ARG16(cpustate); } /* EPUM (w)         */
+OP(ed,a4) { LOG("unimplemented EPU opcode\n");EARA(cpustate);cpustate->_PC+=4;               } /* EPUM (ra)        */
+OP(ed,a5) { LOG("unimplemented EPU opcode\n");EARA(cpustate);cpustate->_PC+=4;               } /* MEPU (ra)        */
+OP(ed,a6) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (HL)        */
+OP(ed,a7) { LOG("unimplemented EPU opcode\n");cpustate->ea = ARG16(cpustate);cpustate->_PC+=4; } /* EPUM (w)         */
 
 OP(ed,a8) { LDD;                                                    } /* LDD              */
 OP(ed,a9) { CPD;                                                    } /* CPD              */
 OP(ed,aa) { IND;                                                    } /* IND              */
 OP(ed,ab) { OUTD;                                                   } /* OUTD             */
-OP(ed,ac) { LOG("unimplemented EPU opcode\n");EAX16(cpustate);              } /* EPUM (IX+w)      */
-OP(ed,ad) { LOG("unimplemented EPU opcode\n");EAX16(cpustate);              } /* MEPU (IX+w)      */
-OP(ed,ae) { LOG("unimplemented EPU opcode\n");                              } /* MEPU (HL)        */
-OP(ed,af) { LOG("unimplemented EPU opcode\n");cpustate->ea = ARG16(cpustate); } /* MEPU (w)         */
+OP(ed,ac) { LOG("unimplemented EPU opcode\n");EAX16(cpustate);cpustate->_PC+=4;              } /* EPUM (IX+w)      */
+OP(ed,ad) { LOG("unimplemented EPU opcode\n");EAX16(cpustate);cpustate->_PC+=4;              } /* MEPU (IX+w)      */
+OP(ed,ae) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (HL)        */
+OP(ed,af) { LOG("unimplemented EPU opcode\n");cpustate->ea = ARG16(cpustate);cpustate->_PC+=4; } /* MEPU (w)         */
 
 OP(ed,b0) { LDIR;                                                   } /* LDIR             */
 OP(ed,b1) { CPIR;                                                   } /* CPIR             */
 OP(ed,b2) { INIR;                                                   } /* INIR             */
 OP(ed,b3) { OTIR;                                                   } /* OTIR             */
-OP(ed,b4) { LOG("unimplemented EPU opcode\n");EAY16(cpustate);              } /* EPUM (IY+w)      */
-OP(ed,b5) { LOG("unimplemented EPU opcode\n");EAY16(cpustate);              } /* MEPU (IY+w)      */
+OP(ed,b4) { LOG("unimplemented EPU opcode\n");EAY16(cpustate);cpustate->_PC+=4;              } /* EPUM (IY+w)      */
+OP(ed,b5) { LOG("unimplemented EPU opcode\n");EAY16(cpustate);cpustate->_PC+=4;              } /* MEPU (IY+w)      */
 OP(ed,b6) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,b7) { cpustate->_HL = IN16(cpustate, cpustate->_BC);                  } /* INW HL,(C)        */
 
@@ -221,8 +221,8 @@ OP(ed,b8) { LDDR;                                                   } /* LDDR   
 OP(ed,b9) { CPDR;                                                   } /* CPDR             */
 OP(ed,ba) { INDR;                                                   } /* INDR             */
 OP(ed,bb) { OTDR;                                                   } /* OTDR             */
-OP(ed,bc) { LOG("unimplemented EPU opcode\n");EAH16(cpustate);              } /* EPUM (HL+w)      */
-OP(ed,bd) { LOG("unimplemented EPU opcode\n");EAH16(cpustate);              } /* MEPU (HL+w)      */
+OP(ed,bc) { LOG("unimplemented EPU opcode\n");EAH16(cpustate);cpustate->_PC+=4;              } /* EPUM (HL+w)      */
+OP(ed,bd) { LOG("unimplemented EPU opcode\n");EAH16(cpustate);cpustate->_PC+=4;              } /* MEPU (HL+w)      */
 OP(ed,be) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,bf) { OUT16(cpustate, cpustate->_BC,cpustate->_HL);                   } /* OUTW (C),HL      */
 
