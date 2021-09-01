@@ -73,8 +73,8 @@ OP(fded,3d) { EAH16(cpustate); WM16(cpustate, cpustate->ea, &cpustate->IY);   } 
 OP(fded,3e) { union PAIR tmp; tmp.w.l = _SP(cpustate); EAY(cpustate); WM16(cpustate, cpustate->ea, &tmp); } /* LD (IY+o),SP     */
 OP(fded,3f) { illegal_2(cpustate);                                            } /* EX 'A,A         */
 
-OP(fded,40) { union PAIR tmp; EARA(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } /* IN (ra),(C)    */
-OP(fded,41) { EARA(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } /* OUT (C),(ra)   */
+OP(fded,40) { union PAIR tmp; CHECK_PRIV_IO(cpustate) { EARA(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } } /* IN (ra),(C)    */
+OP(fded,41) { CHECK_PRIV_IO(cpustate) { EARA(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } } /* OUT (C),(ra)   */
 OP(fded,42) { SBC16( IY, cpustate->_BC );                                            } /* SBC  IY,BC       */
 OP(fded,43) { illegal_2(cpustate); ed_43(cpustate);                            } /* LD   '(w),BC     */
 OP(fded,44) { illegal_2(cpustate); ed_44(cpustate);                            } /* NEG  'A          */
@@ -82,8 +82,8 @@ OP(fded,45) { illegal_2(cpustate); ed_45(cpustate);                            }
 OP(fded,46) { illegal_2(cpustate); ed_46(cpustate);                            } /* IM   '0          */
 OP(fded,47) { illegal_2(cpustate); ed_47(cpustate);                            } /* LD   'I,A        */
 
-OP(fded,48) { union PAIR tmp; EAX16(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } /* IN (IX+w),(C)    */
-OP(fded,49) { EAX16(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } /* OUT (C),(IX+w)   */
+OP(fded,48) { union PAIR tmp; CHECK_PRIV_IO(cpustate) { EAX16(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } } /* IN (IX+w),(C)    */
+OP(fded,49) { CHECK_PRIV_IO(cpustate) { EAX16(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } } /* OUT (C),(IX+w)   */
 OP(fded,4a) { ADC16( IY, cpustate->_BC );                                            } /* ADC  IY,BC       */
 OP(fded,4b) { illegal_2(cpustate); ed_4b(cpustate);                            } /* LD   'BC,(w)     */
 OP(fded,4c) { illegal_2(cpustate); ed_4c(cpustate);                            } /* NEG  'HL         */
@@ -91,8 +91,8 @@ OP(fded,4d) { illegal_2(cpustate); ed_4d(cpustate);                            }
 OP(fded,4e) { illegal_2(cpustate); ed_4e(cpustate);                            } /* IM   '3          */
 OP(fded,4f) { illegal_2(cpustate); ed_4f(cpustate);                            } /* LD   'R,A        */
 
-OP(fded,50) { union PAIR tmp; EAY16(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } /* IN (IY+w),(C)    */
-OP(fded,51) { EAY16(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } /* OUT (C),(IY+w)   */
+OP(fded,50) { union PAIR tmp; CHECK_PRIV_IO(cpustate) { EAY16(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } } /* IN (IY+w),(C)    */
+OP(fded,51) { CHECK_PRIV_IO(cpustate) { EAY16(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } } /* OUT (C),(IY+w)   */
 OP(fded,52) { SBC16( IY, cpustate->_DE );                                            } /* SBC  IY,DE       */
 OP(fded,53) { illegal_2(cpustate); ed_53(cpustate);                            } /* LD  '(w),DE      */
 OP(fded,54) { illegal_2(cpustate);                                            } /* DB   ED          */
@@ -100,8 +100,8 @@ OP(fded,55) { illegal_2(cpustate); ed_55(cpustate);                            }
 OP(fded,56) { illegal_2(cpustate); ed_56(cpustate);                            } /* IM   '1          */
 OP(fded,57) { illegal_2(cpustate); ed_57(cpustate);                            } /* LD   'A,I        */
 
-OP(fded,58) { union PAIR tmp; EAH16(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } /* IN (HL+w),(C)    */
-OP(fded,59) { EAH16(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } /* OUT (C),(HL+w)   */
+OP(fded,58) { union PAIR tmp; CHECK_PRIV_IO(cpustate) { EAH16(cpustate); tmp.b.l = IN(cpustate, cpustate->_BC); WM(cpustate, cpustate->ea, tmp.b.l); cpustate->_F = (cpustate->_F & CF) | SZP[tmp.b.l]; } } /* IN (HL+w),(C)    */
+OP(fded,59) { CHECK_PRIV_IO(cpustate) { EAH16(cpustate); OUT(cpustate, cpustate->_BC, RM(cpustate, cpustate->ea)); } } /* OUT (C),(HL+w)   */
 OP(fded,5a) { ADC16( IY, cpustate->_DE );                                            } /* ADC  IY,DE       */
 OP(fded,5b) { illegal_2(cpustate); ed_5b(cpustate);                            } /* LD   'DE,(w)     */
 OP(fded,5c) { illegal_2(cpustate);                                            } /* DB   ED          */
@@ -109,8 +109,8 @@ OP(fded,5d) { illegal_2(cpustate);                                            } 
 OP(fded,5e) { illegal_2(cpustate); ed_5e(cpustate);                            } /* IM   '2          */
 OP(fded,5f) { illegal_2(cpustate); ed_5f(cpustate);                            } /* LD   'A,R        */
 
-OP(fded,60) { cpustate->_HY = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_HY];                 } /* IN   HY,(C)      */
-OP(fded,61) { OUT(cpustate, cpustate->_BC,cpustate->_HY);                                          } /* OUT  (C),HY       */
+OP(fded,60) { CHECK_PRIV_IO(cpustate) { cpustate->_HY = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_HY]; } } /* IN   HY,(C)      */
+OP(fded,61) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_HY); } } /* OUT  (C),HY       */
 OP(fded,62) { SBC16( IY, cpustate->_IY );                                            } /* SBC  IY,IY       */
 OP(fded,63) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(fded,64) { illegal_2(cpustate); ed_64(cpustate);                            } /* EXTS 'A          */
@@ -118,8 +118,8 @@ OP(fded,65) { illegal_2(cpustate); ed_65(cpustate);                            }
 OP(fded,66) { LD_REG_CTL( IY );                                               } /* LDCTL IY,(C)     */
 OP(fded,67) { illegal_2(cpustate); ed_67(cpustate);                            } /* RRD  '          */
 
-OP(fded,68) { cpustate->_LY = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_LY];                 } /* IN   LY,(C)       */
-OP(fded,69) { OUT(cpustate, cpustate->_BC,cpustate->_LY);                                          } /* OUT  (C),LY       */
+OP(fded,68) { CHECK_PRIV_IO(cpustate) { cpustate->_LY = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_LY]; } } /* IN   LY,(C)       */
+OP(fded,69) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_LY); } } /* OUT  (C),LY       */
 OP(fded,6a) { ADC16( IY, cpustate->_IY );                                            } /* ADC  IY,IY       */
 OP(fded,6b) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(fded,6c) { illegal_2(cpustate); ed_6c(cpustate);                            } /* EXTS 'HL          */
@@ -151,7 +151,7 @@ OP(fded,82) { illegal_2(cpustate); ed_82(cpustate);                            }
 OP(fded,83) { illegal_2(cpustate); ed_83(cpustate);                            } /* OUTIW '          */
 OP(fded,84) { illegal_2(cpustate); ed_84(cpustate);                            } /* EPUM '(SP+w)     */
 OP(fded,85) { illegal_2(cpustate); ed_85(cpustate);                            } /* MEPU '(SP+w)     */
-OP(fded,86) { EAY(cpustate); LDUD_A_M;                                        } /* LDUD A,(IY+o)    */
+OP(fded,86) { EAY(cpustate); LDU_A_M(0);                                       } /* LDUD A,(IY+o)    */
 OP(fded,87) { cpustate->_IY = cpustate->_USP;                                 } /* LDCTL IY,USP     */
 
 OP(fded,88) { illegal_2(cpustate);                                            } /* DB   ED          */
@@ -160,7 +160,7 @@ OP(fded,8a) { illegal_2(cpustate); ed_8a(cpustate);                            }
 OP(fded,8b) { illegal_2(cpustate); ed_8b(cpustate);                            } /* OUTDW '         */
 OP(fded,8c) { illegal_2(cpustate); ed_8c(cpustate);                            } /* EPUM '(HL+IX)   */
 OP(fded,8d) { illegal_2(cpustate); ed_8d(cpustate);                            } /* MEPU '(HL+IX)   */
-OP(fded,8e) { EAY(cpustate); LDUD_M_A;                                        } /* LDUD (IY+o),A    */
+OP(fded,8e) { EAY(cpustate); LDU_M_A(0);                                       } /* LDUD (IY+o),A    */
 OP(fded,8f) { cpustate->_USP = cpustate->_IY;                                 } /* LDCTL USP,IY     */
 
 OP(fded,90) { illegal_2(cpustate);                                            } /* DB   ED          */
@@ -169,7 +169,7 @@ OP(fded,92) { illegal_2(cpustate); ed_92(cpustate);                            }
 OP(fded,93) { illegal_2(cpustate); ed_93(cpustate);                            } /* OTIRW '          */
 OP(fded,94) { illegal_2(cpustate); ed_94(cpustate);                            } /* EPUM '(HL+IY)     */
 OP(fded,95) { illegal_2(cpustate); ed_95(cpustate);                            } /* MEPU '(HL+IY)     */
-OP(fded,96) { EAY(cpustate); LDUP_A_M;                                        } /* LDUP A,(IY+o)    */
+OP(fded,96) { EAY(cpustate); LDU_A_M(1);                                       } /* LDUP A,(IY+o)    */
 OP(fded,97) { illegal_2(cpustate); ed_97(cpustate);                            } /* EPUF '          */
 
 OP(fded,98) { illegal_2(cpustate);                                            } /* DB   ED          */
@@ -178,7 +178,7 @@ OP(fded,9a) { illegal_2(cpustate); ed_9a(cpustate);                            }
 OP(fded,9b) { illegal_2(cpustate); ed_9b(cpustate);                            } /* OTDRW '          */
 OP(fded,9c) { illegal_2(cpustate); ed_9c(cpustate);                            } /* EPUM '(IX+IY)     */
 OP(fded,9d) { illegal_2(cpustate); ed_9d(cpustate);                            } /* EPUM '(IX+IY)     */
-OP(fded,9e) { EAY(cpustate); LDUP_M_A;                                        } /* LDUP (IY+o),A    */
+OP(fded,9e) { EAY(cpustate); LDU_M_A(1);                                       } /* LDUP (IY+o),A    */
 OP(fded,9f) { illegal_2(cpustate); ed_9f(cpustate);                            } /* EPUI '          */
 
 OP(fded,a0) { illegal_2(cpustate); ed_a0(cpustate);                            } /* LDI '          */

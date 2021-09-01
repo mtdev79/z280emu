@@ -82,44 +82,44 @@ OP(ed,3d) { EAH16(cpustate); WM16(cpustate, cpustate->ea, &cpustate->HL);   } /*
 OP(ed,3e) { union PAIR tmp; tmp.w.l = _SP(cpustate); WM16(cpustate, cpustate->_HL, &tmp); } /* LD (HL),SP       */
 OP(ed,3f) {                                                                 } /* EX A,A           */
 
-OP(ed,40) { cpustate->_B = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_B];                 } /* IN   B,(C)       */
-OP(ed,41) { OUT(cpustate, cpustate->_BC,cpustate->_B);                                          } /* OUT  (C),B       */
+OP(ed,40) { CHECK_PRIV_IO(cpustate) { cpustate->_B = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_B]; } } /* IN   B,(C)       */
+OP(ed,41) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_B); } } /* OUT  (C),B       */
 OP(ed,42) { SBC16( HL, cpustate->_BC );                                            } /* SBC  HL,BC       */
 OP(ed,43) { cpustate->ea = ARG16(cpustate); WM16(cpustate,  cpustate->ea, &cpustate->BC );                  } /* LD   (w),BC      */
 OP(ed,44) { NEG;                                                    } /* NEG A            */
 OP(ed,45) { RETN;                                                   } /* RETN             */
-OP(ed,46) { cpustate->IM = 0;                                               } /* IM   0           */
+OP(ed,46) { IM(cpustate, 0);                                               } /* IM   0           */
 OP(ed,47) { LD_I_A;                                                 } /* LD   I,A         */
 
-OP(ed,48) { cpustate->_C = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_C];                 } /* IN   C,(C)       */
-OP(ed,49) { OUT(cpustate, cpustate->_BC,cpustate->_C);                                          } /* OUT  (C),C       */
+OP(ed,48) { CHECK_PRIV_IO(cpustate) { cpustate->_C = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_C]; } } /* IN   C,(C)       */
+OP(ed,49) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_C); } } /* OUT  (C),C       */
 OP(ed,4a) { ADC16( HL, cpustate->_BC );                                            } /* ADC  HL,BC       */
 OP(ed,4b) { cpustate->ea = ARG16(cpustate); RM16(cpustate,  cpustate->ea, &cpustate->BC );                  } /* LD   BC,(w)      */
 OP(ed,4c) { NEG16;                                                  } /* NEG HL           */
 OP(ed,4d) { RETI;                                                   } /* RETI             */
-OP(ed,4e) { cpustate->IM = 3;                                               } /* IM   3           */
+OP(ed,4e) { IM(cpustate, 3);                                               } /* IM   3           */
 OP(ed,4f) { LD_R_A;                                                 } /* LD   R,A         */
 
-OP(ed,50) { cpustate->_D = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_D];                 } /* IN   D,(C)       */
-OP(ed,51) { OUT(cpustate, cpustate->_BC,cpustate->_D);                                          } /* OUT  (C),D       */
+OP(ed,50) { CHECK_PRIV_IO(cpustate) { cpustate->_D = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_D]; } } /* IN   D,(C)       */
+OP(ed,51) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_D); } } /* OUT  (C),D       */
 OP(ed,52) { SBC16( HL, cpustate->_DE );                                            } /* SBC  HL,DE       */
 OP(ed,53) { cpustate->ea = ARG16(cpustate); WM16(cpustate,  cpustate->ea, &cpustate->DE );                  } /* LD   (w),DE      */
 OP(ed,54) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,55) { RETIL;                                                  } /* RETIL            */
-OP(ed,56) { cpustate->IM = 1;                                               } /* IM   1           */
+OP(ed,56) { IM(cpustate, 1);                                               } /* IM   1           */
 OP(ed,57) { LD_A_I;                                                 } /* LD   A,I         */
 
-OP(ed,58) { cpustate->_E = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_E];                 } /* IN   E,(C)       */
-OP(ed,59) { OUT(cpustate, cpustate->_BC,cpustate->_E);                                          } /* OUT  (C),E       */
+OP(ed,58) { CHECK_PRIV_IO(cpustate) { cpustate->_E = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_E]; } } /* IN   E,(C)       */
+OP(ed,59) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_E); } } /* OUT  (C),E       */
 OP(ed,5a) { ADC16( HL, cpustate->_DE );                                            } /* ADC  HL,DE       */
 OP(ed,5b) { cpustate->ea = ARG16(cpustate); RM16(cpustate,  cpustate->ea, &cpustate->DE );                  } /* LD   DE,(w)      */
 OP(ed,5c) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,5d) { illegal_2(cpustate);                                            } /* DB   ED          */
-OP(ed,5e) { cpustate->IM = 2;                                               } /* IM   2           */
+OP(ed,5e) { IM(cpustate, 2);                                               } /* IM   2           */
 OP(ed,5f) { LD_A_R;                                                 } /* LD   A,R         */
 
-OP(ed,60) { cpustate->_H = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_H];                 } /* IN   H,(C)       */
-OP(ed,61) { OUT(cpustate, cpustate->_BC,cpustate->_H);                                          } /* OUT  (C),H       */
+OP(ed,60) { CHECK_PRIV_IO(cpustate) { cpustate->_H = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_H]; } } /* IN   H,(C)       */
+OP(ed,61) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_H); } } /* OUT  (C),H       */
 OP(ed,62) { SBC16( HL, cpustate->_HL );                                            } /* SBC  HL,HL       */
 OP(ed,63) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,64) { EXTS;                                                           } /* EXTS A           */
@@ -127,8 +127,8 @@ OP(ed,65) { PCACHE;                                                         } /*
 OP(ed,66) { LD_REG_CTL( HL );                                         } /* LDCTL HL,(C)     */
 OP(ed,67) { RRD;                                                    } /* RRD  (HL)        */
 
-OP(ed,68) { cpustate->_L = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_L];                 } /* IN   L,(C)       */
-OP(ed,69) { OUT(cpustate, cpustate->_BC,cpustate->_L);                                          } /* OUT  (C),L       */
+OP(ed,68) { CHECK_PRIV_IO(cpustate) { cpustate->_L = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_L]; } } /* IN   L,(C)       */
+OP(ed,69) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_L); } } /* OUT  (C),L       */
 OP(ed,6a) { ADC16( HL, cpustate->_HL );                                            } /* ADC  HL,HL       */
 OP(ed,6b) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,6c) { EXTS_HL;                                                } /* EXTS HL          */
@@ -136,7 +136,7 @@ OP(ed,6d) { ADD16_A( HL );                                          } /* ADD HL,
 OP(ed,6e) { LD_CTL_REG( HL );                                          } /* LDCTL (C),HL     */
 OP(ed,6f) { RLD;                                                    } /* RLD  (HL)        */
 
-OP(ed,70) { IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_L];                 } /* TSTI (C)       */
+OP(ed,70) { CHECK_PRIV_IO(cpustate) { IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_L]; } } /* TSTI (C)       */
 OP(ed,71) { cpustate->extra_cycles += take_trap(cpustate, Z280_TRAP_SC);    } /* SC w             */
 OP(ed,72) { SBC16( HL, _SP(cpustate) );                                            } /* SBC  HL,SP       */
 OP(ed,73) { union PAIR tmp; tmp.w.l = _SP(cpustate); cpustate->ea = ARG16(cpustate); WM16(cpustate,  cpustate->ea, &tmp );                  } /* LD   (w),SP      */
@@ -145,8 +145,8 @@ OP(ed,75) { illegal_2(cpustate);                                            } /*
 OP(ed,76) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,77) { DI(ARG(cpustate));                                              } /* DI n             */
 
-OP(ed,78) { cpustate->_A = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_A];                 } /* IN   A,(C)       */
-OP(ed,79) { OUT(cpustate, cpustate->_BC,cpustate->_A);                                          } /* OUT  (C),A       */
+OP(ed,78) { CHECK_PRIV_IO(cpustate) { cpustate->_A = IN(cpustate, cpustate->_BC); cpustate->_F = (cpustate->_F & CF) | SZP[cpustate->_A]; } } /* IN   A,(C)       */
+OP(ed,79) { CHECK_PRIV_IO(cpustate) { OUT(cpustate, cpustate->_BC,cpustate->_A); } } /* OUT  (C),A       */
 OP(ed,7a) { ADC16( HL, _SP(cpustate) );                                            } /* ADC  HL,SP       */
 OP(ed,7b) { union PAIR tmp; cpustate->ea = ARG16(cpustate); RM16(cpustate,  cpustate->ea, &tmp ); SET_SP(cpustate, tmp.w.l); } /* LD   SP,(w)      */
 OP(ed,7c) { illegal_2(cpustate);                                            } /* DB   ED          */
@@ -156,75 +156,75 @@ OP(ed,7f) { EI(ARG(cpustate));                                              } /*
 
 OP(ed,80) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,81) { illegal_2(cpustate);                                            } /* DB   ED          */
-OP(ed,82) { INIW;                                                           } /* INIW             */
-OP(ed,83) { OUTIW;                                                          } /* OUTIW            */
-OP(ed,84) { LOG("unimplemented EPU opcode\n");EASP16(cpustate);cpustate->_PC+=4;             } /* EPUM (SP+w)      */
-OP(ed,85) { LOG("unimplemented EPU opcode\n");EASP16(cpustate);cpustate->_PC+=4;             } /* MEPU (SP+w)      */
-OP(ed,86) { cpustate->ea = cpustate->_HL; LDUD_A_M;                         } /* LDUD A,(HL)      */
+OP(ed,82) { CHECK_PRIV_IO(cpustate) { INIW; }                               } /* INIW             */
+OP(ed,83) { CHECK_PRIV_IO(cpustate) { OUTIW; }                              } /* OUTIW            */
+OP(ed,84) { EASP16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (SP+w)      */
+OP(ed,85) { EASP16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (SP+w)      */
+OP(ed,86) { cpustate->ea = cpustate->_HL; LDU_A_M(0);                       } /* LDUD A,(HL)      */
 OP(ed,87) { cpustate->_HL = cpustate->_USP;                                 } /* LDCTL HL,USP     */
 
 OP(ed,88) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,89) { illegal_2(cpustate);                                            } /* DB   ED          */
-OP(ed,8a) { INDW;                                                           } /* INDW             */
-OP(ed,8b) { OUTDW;                                                          } /* OUTDW            */
-OP(ed,8c) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (HL+IX)     */
-OP(ed,8d) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (HL+IX)     */
-OP(ed,8e) { cpustate->ea = cpustate->_HL; LDUD_M_A;                         } /* LDUD (HL),A      */
+OP(ed,8a) { CHECK_PRIV_IO(cpustate) { INDW; }                               } /* INDW             */
+OP(ed,8b) { CHECK_PRIV_IO(cpustate) { OUTDW; }                              } /* OUTDW            */
+OP(ed,8c) { EAHX(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (HL+IX)     */
+OP(ed,8d) { EAHX(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (HL+IX)     */
+OP(ed,8e) { cpustate->ea = cpustate->_HL; LDU_M_A(0);                       } /* LDUD (HL),A      */
 OP(ed,8f) { cpustate->_USP = cpustate->_HL;                                 } /* LDCTL USP,HL     */
 
 OP(ed,90) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,91) { illegal_2(cpustate);                                            } /* DB   ED          */
-OP(ed,92) { INIRW;                                                          } /* INIRW            */
-OP(ed,93) { OTIRW;                                                          } /* OTIRW            */
-OP(ed,94) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (HL+IY)     */
-OP(ed,95) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (HL+IX)     */
-OP(ed,96) { cpustate->ea = cpustate->_HL; LDUP_A_M;                         } /* LDUP A,(HL)      */
-OP(ed,97) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUF             */
+OP(ed,92) { CHECK_PRIV_IO(cpustate) { INIRW; }                              } /* INIRW            */
+OP(ed,93) { CHECK_PRIV_IO(cpustate) { OTIRW; }                              } /* OTIRW            */
+OP(ed,94) { EAHY(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (HL+IY)     */
+OP(ed,95) { EAHY(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (HL+IY)     */
+OP(ed,96) { cpustate->ea = cpustate->_HL; LDU_A_M(1);                       } /* LDUP A,(HL)      */
+OP(ed,97) { cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUF) { LOG("unimplemented EPU opcode\n"); } } /* EPUF             */
 
 OP(ed,98) { illegal_2(cpustate);                                            } /* DB   ED          */
 OP(ed,99) { illegal_2(cpustate);                                            } /* DB   ED          */
-OP(ed,9a) { INDRW;                                                          } /* INDRW            */
-OP(ed,9b) { OTDRW;                                                          } /* OTDRW            */
-OP(ed,9c) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (IX+IY)     */
-OP(ed,9d) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (IX+IY)     */
-OP(ed,9e) { cpustate->ea = cpustate->_HL; LDUP_M_A;                         } /* LDUP (HL),A      */
-OP(ed,9f) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUI             */
+OP(ed,9a) { CHECK_PRIV_IO(cpustate) { INDRW; }                              } /* INDRW            */
+OP(ed,9b) { CHECK_PRIV_IO(cpustate) { OTDRW; }                              } /* OTDRW            */
+OP(ed,9c) { EAXY(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (IX+IY)     */
+OP(ed,9d) { EAXY(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (IX+IY)     */
+OP(ed,9e) { cpustate->ea = cpustate->_HL; LDU_M_A(1);                       } /* LDUP (HL),A      */
+OP(ed,9f) { cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUI) { LOG("unimplemented EPU opcode\n"); } } /* EPUI             */
 
 OP(ed,a0) { LDI;                                                    } /* LDI              */
 OP(ed,a1) { CPI;                                                    } /* CPI              */
-OP(ed,a2) { INI;                                                    } /* INI              */
-OP(ed,a3) { OUTI;                                                   } /* OUTI             */
-OP(ed,a4) { LOG("unimplemented EPU opcode\n");EARA(cpustate);cpustate->_PC+=4;               } /* EPUM (ra)        */
-OP(ed,a5) { LOG("unimplemented EPU opcode\n");EARA(cpustate);cpustate->_PC+=4;               } /* MEPU (ra)        */
-OP(ed,a6) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* EPUM (HL)        */
-OP(ed,a7) { LOG("unimplemented EPU opcode\n");cpustate->ea = ARG16(cpustate);cpustate->_PC+=4; } /* EPUM (w)         */
+OP(ed,a2) { CHECK_PRIV_IO(cpustate) { INI; }                        } /* INI              */
+OP(ed,a3) { CHECK_PRIV_IO(cpustate) { OUTI; }                       } /* OUTI             */
+OP(ed,a4) { EARA(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (ra)        */
+OP(ed,a5) { EARA(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (ra)        */
+OP(ed,a6) { cpustate->ea = cpustate->_HL;cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (HL)        */
+OP(ed,a7) { cpustate->ea = ARG16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (w)         */
 
 OP(ed,a8) { LDD;                                                    } /* LDD              */
 OP(ed,a9) { CPD;                                                    } /* CPD              */
-OP(ed,aa) { IND;                                                    } /* IND              */
-OP(ed,ab) { OUTD;                                                   } /* OUTD             */
-OP(ed,ac) { LOG("unimplemented EPU opcode\n");EAX16(cpustate);cpustate->_PC+=4;              } /* EPUM (IX+w)      */
-OP(ed,ad) { LOG("unimplemented EPU opcode\n");EAX16(cpustate);cpustate->_PC+=4;              } /* MEPU (IX+w)      */
-OP(ed,ae) { LOG("unimplemented EPU opcode\n");cpustate->_PC+=4;                              } /* MEPU (HL)        */
-OP(ed,af) { LOG("unimplemented EPU opcode\n");cpustate->ea = ARG16(cpustate);cpustate->_PC+=4; } /* MEPU (w)         */
+OP(ed,aa) { CHECK_PRIV_IO(cpustate) { IND; }                        } /* IND              */
+OP(ed,ab) { CHECK_PRIV_IO(cpustate) { OUTD; }                       } /* OUTD             */
+OP(ed,ac) { EAX16(cpustate);cpustate->_PC+=4;CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (IX+w)      */
+OP(ed,ad) { EAX16(cpustate);cpustate->_PC+=4;CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (IX+w)      */
+OP(ed,ae) { cpustate->ea = cpustate->_HL;cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (HL)        */
+OP(ed,af) { cpustate->ea = ARG16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (w)         */
 
 OP(ed,b0) { LDIR;                                                   } /* LDIR             */
 OP(ed,b1) { CPIR;                                                   } /* CPIR             */
-OP(ed,b2) { INIR;                                                   } /* INIR             */
-OP(ed,b3) { OTIR;                                                   } /* OTIR             */
-OP(ed,b4) { LOG("unimplemented EPU opcode\n");EAY16(cpustate);cpustate->_PC+=4;              } /* EPUM (IY+w)      */
-OP(ed,b5) { LOG("unimplemented EPU opcode\n");EAY16(cpustate);cpustate->_PC+=4;              } /* MEPU (IY+w)      */
+OP(ed,b2) { CHECK_PRIV_IO(cpustate) { INIR; }                       } /* INIR             */
+OP(ed,b3) { CHECK_PRIV_IO(cpustate) { OTIR; }                       } /* OTIR             */
+OP(ed,b4) { EAY16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (IY+w)      */
+OP(ed,b5) { EAY16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (IY+w)      */
 OP(ed,b6) { illegal_2(cpustate);                                            } /* DB   ED          */
-OP(ed,b7) { cpustate->_HL = IN16(cpustate, cpustate->_BC);                  } /* INW HL,(C)        */
+OP(ed,b7) { CHECK_PRIV_IO(cpustate) { cpustate->_HL = IN16(cpustate, cpustate->_BC); } } /* INW HL,(C)        */
 
 OP(ed,b8) { LDDR;                                                   } /* LDDR             */
 OP(ed,b9) { CPDR;                                                   } /* CPDR             */
-OP(ed,ba) { INDR;                                                   } /* INDR             */
-OP(ed,bb) { OTDR;                                                   } /* OTDR             */
-OP(ed,bc) { LOG("unimplemented EPU opcode\n");EAH16(cpustate);cpustate->_PC+=4;              } /* EPUM (HL+w)      */
-OP(ed,bd) { LOG("unimplemented EPU opcode\n");EAH16(cpustate);cpustate->_PC+=4;              } /* MEPU (HL+w)      */
+OP(ed,ba) { CHECK_PRIV_IO(cpustate) { INDR; }                       } /* INDR             */
+OP(ed,bb) { CHECK_PRIV_IO(cpustate) { OTDR; }                       } /* OTDR             */
+OP(ed,bc) { EAH16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_EPUM) { LOG("unimplemented EPU opcode\n"); } } /* EPUM (HL+w)      */
+OP(ed,bd) { EAH16(cpustate);cpustate->_PC+=4; CHECK_EPU(cpustate,Z280_TRAP_MEPU) { LOG("unimplemented EPU opcode\n"); } } /* MEPU (HL+w)      */
 OP(ed,be) { illegal_2(cpustate);                                            } /* DB   ED          */
-OP(ed,bf) { OUT16(cpustate, cpustate->_BC,cpustate->_HL);                   } /* OUTW (C),HL      */
+OP(ed,bf) { CHECK_PRIV_IO(cpustate) { OUT16(cpustate, cpustate->_BC,cpustate->_HL); } } /* OUTW (C),HL      */
 
 OP(ed,c0) { MULT( cpustate->_B );                                           } /* MULT A,B         */
 OP(ed,c1) { MULTU( cpustate->_B );                                          } /* MULTU A,B        */

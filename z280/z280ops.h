@@ -18,6 +18,30 @@
 }
 
 /***************************************************************
+ * Privileged instruction check
+ ***************************************************************/
+#define CHECK_PRIV(cs)                                        \
+if (is_user(cs))                                              \
+{                                                             \
+	take_trap(cs, Z280_TRAP_PRIV);			                  \
+}															  \
+else														  
+
+#define CHECK_PRIV_IO(cs)                                     \
+if (is_user(cs) && (cs)->cr[Z280_TCR]&Z280_TCR_I)             \
+{                                                             \
+	take_trap(cs, Z280_TRAP_PRIV);			                  \
+}															  \
+else														  
+
+#define CHECK_EPU(cs,t)                                       \
+if (!((cs)->cr[Z280_TCR]&Z280_TCR_E))                         \
+{                                                             \
+	take_trap(cs, t);			                              \
+}															  \
+else														  
+
+/***************************************************************
  * Internal IO select
  ***************************************************************/
 #define is_internal_io(cs,port) ( \
@@ -181,44 +205,38 @@ INLINE offs_t MMU_REMAP_ADDR(struct z280_state *cpustate, offs_t addr, int progr
 INLINE offs_t MMU_REMAP_ADDR_LDU(struct z280_state *cpustate, offs_t addr, int program, int write)
 {
 	offs_t res;
-	if (is_user(cpustate)) // User mode
-	{
-		take_trap(cpustate, Z280_TRAP_PRIV);
-	}
-	else // System mode
-	{
-		if (MMUMCR(cpustate) & Z280_MMUMCR_UTE) {
-			if (MMUMCR(cpustate) & Z280_MMUMCR_UPD)
-				res = mmu_translate_separate(cpustate, addr, Z280_MSR_US_USER, program);
-			else
-				res = mmu_translate_nonseparate(cpustate, addr, Z280_MSR_US_USER);
+	// assume system mode
+	if (MMUMCR(cpustate) & Z280_MMUMCR_UTE) {
+		if (MMUMCR(cpustate) & Z280_MMUMCR_UPD)
+			res = mmu_translate_separate(cpustate, addr, Z280_MSR_US_USER, program);
+		else
+			res = mmu_translate_nonseparate(cpustate, addr, Z280_MSR_US_USER);
 #ifdef MMU_DEBUG
-			LOG("MMU_REMAP_ADDR_LDU %06X\n", res);
+		LOG("MMU_REMAP_ADDR_LDU %06X\n", res);
 #endif
-			if (cpustate->pdr[cpustate->eapdr] & Z280_PDR_V)
+		if (cpustate->pdr[cpustate->eapdr] & Z280_PDR_V)
+		{
+			if (write)
 			{
-				if (write)
+				if (!(cpustate->pdr[cpustate->eapdr] & Z280_PDR_WP))
 				{
-					if (!(cpustate->pdr[cpustate->eapdr] & Z280_PDR_WP))
-					{
-						cpustate->pdr[cpustate->eapdr] |= Z280_PDR_M;
-					}
-					else // attempt to write to a write-protected page
-					{
-						res = MMU_REMAP_ADDR_FAILED;
-					}
+					cpustate->pdr[cpustate->eapdr] |= Z280_PDR_M;
+				}
+				else // attempt to write to a write-protected page
+				{
+					res = MMU_REMAP_ADDR_FAILED;
 				}
 			}
-			else // attept to access an invalid page
-			{
-				res = MMU_REMAP_ADDR_FAILED;
-			}
 		}
-		else
+		else // attept to access an invalid page
 		{
-			// no translation, zero extend
-			res = addr & 0xffff;
+			res = MMU_REMAP_ADDR_FAILED;
 		}
+	}
+	else
+	{
+		// no translation, zero extend
+		res = addr & 0xffff;
 	}
 	return res;
 }
@@ -548,32 +566,39 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
  * RETN
  ***************************************************************/
 #define RETN    {                                               \
-	LOG("Z280 '%s' RETN MSR:%d IFF2:%d\n", cpustate->device->m_tag, \
-	    cpustate->cr[Z280_MSR]&Z280_MSR_IREMASK, cpustate->IFF2); \
-	POP(cpustate, PC);                                                  \
-	cpustate->cr[Z280_MSR] = (cpustate->cr[Z280_MSR] & ~Z280_MSR_IREMASK) | \
-	    cpustate->IFF2;                                                \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		LOG("Z280 '%s' RETN MSR:%d IFF2:%d\n", cpustate->device->m_tag, \
+			cpustate->cr[Z280_MSR]&Z280_MSR_IREMASK, cpustate->IFF2); \
+		POP(cpustate, PC);                                                  \
+		cpustate->cr[Z280_MSR] = (cpustate->cr[Z280_MSR] & ~Z280_MSR_IREMASK) | \
+			cpustate->IFF2;                                                \
+	}															\
 }
 
 /***************************************************************
  * RETI
  ***************************************************************/
 #define RETI    {                                               \
-	POP(cpustate, PC);                                                  \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		POP(cpustate, PC);                                                  \
 /* according to http://www.msxnet.org/tech/Z80/z80undoc.txt */  \
-/*  cpustate->IFF1 = cpustate->IFF2;  */                                            \
-	if (cpustate->daisy != NULL)						\
-		z80_daisy_chain_call_reti_device(cpustate->daisy);                 \
+/*  	cpustate->IFF1 = cpustate->IFF2;  */                                            \
+		if (cpustate->daisy != NULL)						\
+			z80_daisy_chain_call_reti_device(cpustate->daisy);                 \
+	}															\
 }
 
 #define RETIL    {                                               \
 	union PAIR tmp;                                              \
-	RM16(cpustate, _SPD(cpustate), &tmp); INC2_SP(cpustate);   \
-	/* need to pop PC first using current MSR */                  \
-	POP(cpustate, PC);                                                  \
-	MSR(cpustate) = tmp.w.l;                   \
-	if (cpustate->daisy != NULL)						\
-		z80_daisy_chain_call_reti_device(cpustate->daisy);                 \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		RM16(cpustate, _SPD(cpustate), &tmp); INC2_SP(cpustate);   \
+		/* need to pop PC first using current MSR */                  \
+		POP(cpustate, PC);                                                  \
+		MSR(cpustate) = tmp.w.l;                   \
+	}															\
 }
 
 /***************************************************************
@@ -584,96 +609,94 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 }
 
 /***************************************************************
- * LDUP
+ * LDUP, LDUD
  ***************************************************************/
-#define LDUP_A_M {	 \
-	offs_t phy = MMU_REMAP_ADDR_LDU(cpustate,cpustate->ea,1,0);		   \
-	if (phy != MMU_REMAP_ADDR_FAILED)						   \
-	{														   \
-		cpustate->_A = (cpustate)->ram->read_byte(phy);		   \
-		cpustate->_F |= CF;									   \
-	}														   \
-	else													   \
-	{														   \
-		cpustate->_F &= ~(ZF|VF|CF);						   \
-		UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
-		cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
-	}														   \
+#define LDU_A_M(program) {	 \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		offs_t phy = MMU_REMAP_ADDR_LDU(cpustate,cpustate->ea,program,0);		   \
+		if (phy != MMU_REMAP_ADDR_FAILED)						   \
+		{														   \
+			cpustate->_A = (cpustate)->ram->read_byte(phy);		   \
+			cpustate->_F |= CF;									   \
+		}														   \
+		else													   \
+		{														   \
+			cpustate->_F &= ~(ZF|VF|CF);						   \
+			UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
+			cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
+		}														   \
+	}															\
 }
 
-#define LDUP_M_A {	 \
-	offs_t phy = MMU_REMAP_ADDR_LDU(cpustate,cpustate->ea,1,1);		   \
-	if (phy != MMU_REMAP_ADDR_FAILED)						   \
-	{														   \
-		(cpustate)->ram->write_byte(phy, cpustate->_A);		   \
-		cpustate->_F |= CF;									   \
-	}														   \
-	else													   \
-	{														   \
-		cpustate->_F &= ~(ZF|VF|CF);						   \
-		UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
-		cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
-	}														   \
-}
-
-#define LDUD_A_M {	 \
-	offs_t phy = MMU_REMAP_ADDR_LDU(cpustate,cpustate->ea,0,0);		   \
-	if (phy != MMU_REMAP_ADDR_FAILED)						   \
-	{														   \
-		cpustate->_A = (cpustate)->ram->read_byte(phy);		   \
-		cpustate->_F |= CF;									   \
-	}														   \
-	else													   \
-	{														   \
-		cpustate->_F &= ~(ZF|VF|CF);						   \
-		UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
-		cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
-	}														   \
-}
-
-#define LDUD_M_A {	 \
-	offs_t phy = MMU_REMAP_ADDR_LDU(cpustate,cpustate->ea,0,1);		   \
-	if (phy != MMU_REMAP_ADDR_FAILED)						   \
-	{														   \
-		(cpustate)->ram->write_byte(phy, cpustate->_A);		   \
-		cpustate->_F |= CF;									   \
-	}														   \
-	else													   \
-	{														   \
-		cpustate->_F &= ~(ZF|VF|CF);						   \
-		UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
-		cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
-	}														   \
+#define LDU_M_A(program) {	 \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		offs_t phy = MMU_REMAP_ADDR_LDU(cpustate,cpustate->ea,program,1);		   \
+		if (phy != MMU_REMAP_ADDR_FAILED)						   \
+		{														   \
+			(cpustate)->ram->write_byte(phy, cpustate->_A);		   \
+			cpustate->_F |= CF;									   \
+		}														   \
+		else													   \
+		{														   \
+			cpustate->_F &= ~(ZF|VF|CF);						   \
+			UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
+			cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
+		}														   \
+	}															\
 }
 
 /***************************************************************
  * LD   R,A
  ***************************************************************/
 #define LD_R_A {                                                \
-	cpustate->R = cpustate->_A;                                                 \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		cpustate->R = cpustate->_A;                                                 \
+	}															\
 }
 
 /***************************************************************
  * LD   A,R
  ***************************************************************/
 #define LD_A_R {                                                \
-	cpustate->_A = cpustate->R;                                     \
-	cpustate->_F = (cpustate->_F & CF) | SZ[cpustate->_A] | ( (MSR(cpustate)&1) << 2 );                    \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		cpustate->_A = cpustate->R;                                     \
+		cpustate->_F = (cpustate->_F & CF) | SZ[cpustate->_A] | ( (MSR(cpustate)&1) << 2 );                    \
+	}															\
 }
 
 /***************************************************************
  * LD   I,A
  ***************************************************************/
 #define LD_I_A {                                                \
-	cpustate->I = cpustate->_A;                                                 \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		cpustate->I = cpustate->_A;                                                 \
+	}															\
 }
 
 /***************************************************************
  * LD   A,I
  ***************************************************************/
 #define LD_A_I {                                                \
-	cpustate->_A = cpustate->I;                                                 \
-	cpustate->_F = (cpustate->_F & CF) | SZ[cpustate->_A] | ( (MSR(cpustate)&1) << 2 );                    \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		cpustate->_A = cpustate->I;                                                 \
+		cpustate->_F = (cpustate->_F & CF) | SZ[cpustate->_A] | ( (MSR(cpustate)&1) << 2 );                    \
+	}															\
+}
+
+/***************************************************************
+ * IM   n
+ ***************************************************************/
+#define IM(cs,n) {                                                \
+	CHECK_PRIV(cs)												  \
+	{															\
+		cs->IM = n;												\
+	}															\
 }
 
 /***************************************************************
@@ -688,11 +711,17 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
  * LDCTL
  ***************************************************************/
 #define LD_CTL_REG(SR) {	 \
-	z280_writecontrol(cpustate, cpustate->_C, cpustate->SR.d);			 \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		z280_writecontrol(cpustate, cpustate->_C, cpustate->SR.d);			 \
+	}															\
 }
 
 #define LD_REG_CTL(DR) {	 \
-	cpustate->DR.d = z280_readcontrol(cpustate, cpustate->_C);			 \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		cpustate->DR.d = z280_readcontrol(cpustate, cpustate->_C);			 \
+	}															\
 }
 
 
@@ -1347,10 +1376,6 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 #define LDI {                                                   \
 	UINT8 val = RM(cpustate, cpustate->_HL);                                         \
 	WM(cpustate,  cpustate->_DE, val );                                              \
-	LOG("Z280 '%s' LDI dst=%06X src=%06X $%02X '%c'\n", cpustate->device->m_tag,  \
-	MMU_REMAP_ADDR_DBG(cpustate, cpustate->_DE, 0), \
-	MMU_REMAP_ADDR_DBG(cpustate, cpustate->_HL, 0), \
-	val, isprint(val) ? val : ' ');				\
 	cpustate->_F &= SF | ZF | CF;                                       \
 	if( (cpustate->_A + val) & 0x02 ) cpustate->_F |= YF; /* bit 1 -> flag 5 */      \
 	if( (cpustate->_A + val) & 0x08 ) cpustate->_F |= XF; /* bit 3 -> flag 3 */      \
@@ -1661,11 +1686,16 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
  * EI
  ***************************************************************/
 #define EI(val) {                                                    \
-	MSR(cpustate) |= val&0x7f;						\
-	cpustate->after_EI = 1;                                         \
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		MSR(cpustate) |= val&0x7f;						\
+		cpustate->after_EI = 1;                                         \
+	}															\
 }
 
 #define DI(val) {  \
-	MSR(cpustate) &= ~(val&0x7f);						\
+	CHECK_PRIV(cpustate)												  \
+	{															\
+		MSR(cpustate) &= ~(val&0x7f);						\
+	}															\
 }
-

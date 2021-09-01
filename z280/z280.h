@@ -65,14 +65,22 @@ enum
 };*/
 
 /* traps */
-#define Z280_TRAP_EPA   0           /* Extended instruction trap */
-#define Z280_TRAP_PRIV  1           /* Privileged instruction trap */
-#define Z280_TRAP_SC    2           /* System call trap */
-#define Z280_TRAP_ACCV  3           /* Access violation trap */
-#define Z280_TRAP_SSO   4           /* System stack overflow trap */
-#define Z280_TRAP_DIV   5           /* Division trap */
-#define Z280_TRAP_SS    6           /* Single step trap */
-#define Z280_TRAP_BP    7           /* Breakpoint trap */
+#define Z280_TRAP_EPUM  0           /* EPUM trap */
+#define Z280_TRAP_MEPU  1           /* MEPU trap */
+#define Z280_TRAP_EPUF  2           /* EPUF trap */
+#define Z280_TRAP_EPUI  3           /* EPUI trap */
+#define Z280_TRAP_PRIV  4           /* Privileged instruction trap */
+#define Z280_TRAP_SC    5           /* System call trap */
+#define Z280_TRAP_ACCV  6           /* Access violation trap */
+#define Z280_TRAP_SSO   7           /* System stack overflow trap */
+#define Z280_TRAP_DIV   8           /* Division trap */
+#define Z280_TRAP_SS    9           /* Single step trap */
+#define Z280_TRAP_BP    10          /* Breakpoint trap */
+
+#define Z280_TRAPSAVE_PREPC   1
+#define Z280_TRAPSAVE_ARG16   2
+#define Z280_TRAPSAVE_EPU     4
+#define Z280_TRAPSAVE_EA      8
 
 /* interrupt priorities */
 #define Z280_INT_NMI    0           /* NMI */

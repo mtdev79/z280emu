@@ -135,7 +135,7 @@ OP(op,72) { WM(cpustate,  cpustate->_HL, cpustate->_D );                        
 OP(op,73) { WM(cpustate,  cpustate->_HL, cpustate->_E );                                            } /* LD   (HL),E      */
 OP(op,74) { WM(cpustate,  cpustate->_HL, cpustate->_H );                                            } /* LD   (HL),H      */
 OP(op,75) { WM(cpustate,  cpustate->_HL, cpustate->_L );                                            } /* LD   (HL),L      */
-OP(op,76) { ENTER_HALT(cpustate);                                           } /* HALT             */
+OP(op,76) { if (MSR(cpustate)&Z280_MSR_BH) { cpustate->extra_cycles += take_trap(cpustate, Z280_TRAP_BP); } else CHECK_PRIV(cpustate) { ENTER_HALT(cpustate); } } /* HALT             */
 OP(op,77) { WM(cpustate,  cpustate->_HL, cpustate->_A );                                            } /* LD   (HL),A      */
 
 OP(op,78) { cpustate->_A = cpustate->_B;                                                } /* LD   A,B         */
@@ -240,7 +240,7 @@ OP(op,cf) { RST(0x08);                                              } /* RST  1 
 OP(op,d0) { RET_COND( !(cpustate->_F & CF), 0xd0 );                         } /* RET  NC          */
 OP(op,d1) { POP(cpustate, DE);                                              } /* POP  DE          */
 OP(op,d2) { JP_COND( !(cpustate->_F & CF) );                                    } /* JP   NC,a        */
-OP(op,d3) { unsigned n = ARG(cpustate) | (cpustate->_A << 8); OUT( cpustate, n, cpustate->_A );         } /* OUT  (n),A       */
+OP(op,d3) { CHECK_PRIV_IO(cpustate) { unsigned n = ARG(cpustate) | (cpustate->_A << 8); OUT( cpustate, n, cpustate->_A ); } } /* OUT  (n),A       */
 OP(op,d4) { CALL_COND( !(cpustate->_F & CF), 0xd4 );                            } /* CALL NC,a        */
 OP(op,d5) { PUSH(cpustate,  DE );                                           } /* PUSH DE          */
 OP(op,d6) { SUB(ARG(cpustate));                                             } /* SUB  n           */
@@ -249,7 +249,7 @@ OP(op,d7) { RST(0x10);                                              } /* RST  2 
 OP(op,d8) { RET_COND( cpustate->_F & CF, 0xd8 );                                } /* RET  C           */
 OP(op,d9) { EXX;                                                    } /* EXX              */
 OP(op,da) { JP_COND( cpustate->_F & CF );                                   } /* JP   C,a         */
-OP(op,db) { unsigned n = ARG(cpustate) | (cpustate->_A << 8); cpustate->_A = IN( cpustate, n );         } /* IN   A,(n)       */
+OP(op,db) { CHECK_PRIV_IO(cpustate) { unsigned n = ARG(cpustate) | (cpustate->_A << 8); cpustate->_A = IN( cpustate, n ); } } /* IN   A,(n)       */
 OP(op,dc) { CALL_COND( cpustate->_F & CF, 0xdc );                           } /* CALL C,a         */
 OP(op,dd) { cpustate->extra_cycles += exec_dd(cpustate,ROP(cpustate));                                   } /* **** DD xx       */
 OP(op,de) { SBC(ARG(cpustate));                                             } /* SBC  A,n         */
@@ -341,7 +341,7 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 		{
 			cpustate->IFF2 = cpustate->cr[Z280_MSR] & Z280_MSR_IREMASK;
 			/* Clear MSR */
-			cpustate->cr[Z280_MSR] &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
+			MSR(cpustate) &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
 			PUSH(cpustate,  PC );
 			cpustate->_PCD = 0x0066;
 			LOG("Z280 '%s' NMI $0066\n", cpustate->device->m_tag);
@@ -357,7 +357,7 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 				case 0:
 					/* Interrupt mode 0. */
 					/* Clear MSR */
-					cpustate->cr[Z280_MSR] &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
+					MSR(cpustate) &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
 					/* We check for CALL and JP instructions, */
 					/* if neither of these were found we assume a 1 byte opcode */
 					/* was placed on the databus                                */
@@ -387,7 +387,7 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 				case 1:
 					/* Interrupt mode 1. RST 38h */
 					/* Clear MSR */
-					cpustate->cr[Z280_MSR] &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
+					MSR(cpustate) &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
 					LOG("Z280 '%s' IM1 $0038\n",cpustate->device->m_tag );
 					PUSH(cpustate,  PC );
 					cpustate->_PCD = 0x0038;
@@ -398,7 +398,7 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 					/* Interrupt mode 2. Vector through [I:databyte] */
 					/* Clear MSR */
 					irq_vector = get_irq_vector(cpustate, irq);
-					cpustate->cr[Z280_MSR] &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
+					MSR(cpustate) &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
 					irq_vector = (irq_vector & 0xff) + (cpustate->I << 8);
 					PUSH(cpustate,  PC );
 					RM16( cpustate, irq_vector, &cpustate->PC ); // system mode p.6-2
@@ -515,12 +515,12 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 	return cycles;
 }
 
-void TRAP(struct z280_state *cpustate, int vector, int prepc, int arg16)
+void TRAP(struct z280_state *cpustate, int vector, int trapsave)
 {
 	union PAIR tmp, tmparg;
 	// fetch state while still in original mode
 	tmp.w.l = MSR(cpustate);
-	if (arg16) // SC also pushes word argument
+	if (trapsave&Z280_TRAPSAVE_ARG16) // SC also pushes word argument
 	{
 		tmparg.w.l = ARG16(cpustate);
 	}
@@ -529,7 +529,7 @@ void TRAP(struct z280_state *cpustate, int vector, int prepc, int arg16)
 	MSR(cpustate) &= ~Z280_MSR_US;
 	// save state
 	cpustate->_SSP-=2;
-	if (prepc)
+	if (trapsave&Z280_TRAPSAVE_PREPC)
 	{
 		WM16(cpustate, cpustate->_SSPD, &cpustate->PREPC); // PC of the causing instruction
 	}
@@ -538,8 +538,18 @@ void TRAP(struct z280_state *cpustate, int vector, int prepc, int arg16)
 		WM16(cpustate, cpustate->_SSPD, &cpustate->PC);  // PC of next instruction
 	}
 	cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &tmp); // MSR
-	if (arg16)
+	if (trapsave&Z280_TRAPSAVE_ARG16)
 	{
+		cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &tmparg);
+	}
+	if (trapsave&Z280_TRAPSAVE_EA)
+	{
+		tmparg.d = cpustate->ea;
+		cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &tmparg);
+	}
+	if (trapsave&Z280_TRAPSAVE_EPU)
+	{
+		tmparg.w.l = cpustate->_PC - 4;
 		cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &tmparg);
 	}
 	// load IV
@@ -555,22 +565,42 @@ int take_trap(struct z280_state *cpustate, int trap)
 	union PAIR tmp;
 	switch (trap)
 	{
+		case Z280_TRAP_BP:
+			TRAP(cpustate, 0x40, Z280_TRAPSAVE_PREPC);
+			cycles = 26;
+			break;
 		case Z280_TRAP_ACCV:
-			TRAP(cpustate, 0x4C, 1, 0);
+			TRAP(cpustate, 0x4C, Z280_TRAPSAVE_PREPC);
 			MMUMCR(cpustate) = MMUMCR(cpustate) &~ Z280_MMUMCR_PFIMASK | cpustate->eapdr;
 			cycles = 25;
 			break;
 		case Z280_TRAP_DIV:
-			TRAP(cpustate, 0x44, 1, 0);
+			TRAP(cpustate, 0x44, Z280_TRAPSAVE_PREPC);
 			cycles = 25;
 			break;
 		case Z280_TRAP_PRIV:
-			TRAP(cpustate, 0x54, 1, 0);
+			TRAP(cpustate, 0x54, Z280_TRAPSAVE_PREPC);
 			cycles = 26;
 			break;
 		case Z280_TRAP_SC:
-			TRAP(cpustate, 0x50, 0, 1);
+			TRAP(cpustate, 0x50, Z280_TRAPSAVE_ARG16);
 			cycles = 30;
+			break;
+		case Z280_TRAP_EPUM:
+			TRAP(cpustate, 0x58, Z280_TRAPSAVE_EPU|Z280_TRAPSAVE_EA);
+			cycles = 38;
+			break;
+		case Z280_TRAP_MEPU:
+			TRAP(cpustate, 0x5C, Z280_TRAPSAVE_EPU|Z280_TRAPSAVE_EA);
+			cycles = 38;
+			break;
+		case Z280_TRAP_EPUF:
+			TRAP(cpustate, 0x60, Z280_TRAPSAVE_EPU);
+			cycles = 31;
+			break;
+		case Z280_TRAP_EPUI:
+			TRAP(cpustate, 0x64, Z280_TRAPSAVE_EPU);
+			cycles = 31;
 			break;
 	}
 	return cycles;

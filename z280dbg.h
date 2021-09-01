@@ -60,7 +60,7 @@ void debugger_instruction_hook(device_t *device, offs_t curpc) {
 		dres = cpu_disassemble_z280(device,ibuf,transpc,&mem[transpc],0);
 		printf("%06X: ",transpc);
 		for (i=0;i<(dres &DASMFLAG_LENGTHMASK);i++) printf("%02X",mem[transpc+i]);
-		for ( ;i<5;i++) {putchar(' ');putchar(' ');}
+		for ( ;i<7;i++) {putchar(' ');putchar(' ');}
 		printf(" %s\n",ibuf);
 		/*if (strstr(ibuf,",(hl)")||strstr(ibuf," (hl)")||strstr(ibuf,"ldi")||strstr(ibuf,"ldd"))
 			printf("\tm:%02X",debugger_getmem(device, cpu_get_state_z280(device,Z280_HL)));

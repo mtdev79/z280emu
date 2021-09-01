@@ -184,7 +184,7 @@ INLINE struct z280_state *get_safe_token(device_t *device)
 /* Control register bitmasks */
 // MSR
 #define Z280_MSR_US   0x4000   // User/System bit
-#define Z280_MSR_BR   0x1000   // Breakpoint-on-halt bit
+#define Z280_MSR_BH   0x1000   // Breakpoint-on-halt bit
 #define Z280_MSR_SSP  0x200	   // Single-Step Pending bit
 #define Z280_MSR_SS   0x100	   // Single-Step bit
 #define Z280_MSR_IREMASK  0x7f // Interrupt Request Enable bits (Group0-6)
