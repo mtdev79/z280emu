@@ -532,6 +532,7 @@ void TRAP(struct z280_state *cpustate, int vector, int trapsave)
 	if (trapsave&Z280_TRAPSAVE_PREPC)
 	{
 		WM16(cpustate, cpustate->_SSPD, &cpustate->PREPC); // PC of the causing instruction
+		tmp.w.l &= ~Z280_MSR_SSP; // p.6-5
 	}
 	else
 	{
@@ -565,6 +566,10 @@ int take_trap(struct z280_state *cpustate, int trap)
 	union PAIR tmp;
 	switch (trap)
 	{
+		case Z280_TRAP_SS:
+			TRAP(cpustate, 0x3C, 0);
+			cycles = 26;
+			break;
 		case Z280_TRAP_BP:
 			TRAP(cpustate, 0x40, Z280_TRAPSAVE_PREPC);
 			cycles = 26;

@@ -1734,8 +1734,17 @@ void cpu_execute_z280(device_t *device, int icount)
 		{
 			//cpustate->R++;
 			cpustate->extra_cycles = 0;
-			curcycles += exec_op(cpustate,ROP(cpustate));
-			curcycles += cpustate->extra_cycles;
+			if (MSR(cpustate)&Z280_MSR_SSP)
+			{
+				MSR(cpustate) &= ~Z280_MSR_SSP;
+				take_trap(cpustate, Z280_TRAP_SS);
+			}
+			else
+			{
+				MSR(cpustate) = (MSR(cpustate)&Z280_MSR_SS)? (MSR(cpustate)|Z280_MSR_SSP) : (MSR(cpustate)&~Z280_MSR_SSP);
+				curcycles += exec_op(cpustate,ROP(cpustate));
+				curcycles += cpustate->extra_cycles;
+			}
 		}
 		else
 			curcycles += 3;
