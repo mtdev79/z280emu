@@ -45,6 +45,10 @@
 #define FUNCNAME __PRETTY_FUNCTION__
 #endif
 
+// exports from z280
+void set_irq_internal(device_t *device, int irq, int state);
+UINT32 get_brg_const_z280(struct z280_device *d);
+
 //**************************************************************************
 //  FORWARD DECLARATIONS
 //**************************************************************************

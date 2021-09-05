@@ -300,7 +300,7 @@ void CloseIDE() {
 
 void InitIDE() {
    ic0=ide_allocate("IDE0");
-   if (if00=fopen("cf00.dsk","r+b")) {
+   if ((if00=fopen("cf00.dsk","r+b"))) {
      ifd00=fileno(if00);
      ide_attach(ic0,0,ifd00);
    }

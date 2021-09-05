@@ -214,6 +214,7 @@ void cpu_execute_z280(device_t *device, int icount);
 int cpu_translate_z280(device_t *device, enum address_spacenum space, int intention, offs_t *address);
 
 void z280_set_irq_line(device_t *device, int irqline, int state);
+void z280_set_rdy_line(device_t *device, int rdyline, int state);
                                                  
 offs_t cpu_get_state_z280(device_t *device,int device_state_entry);
 void cpu_string_export_z280(device_t *device, int device_state_entry, char *string);

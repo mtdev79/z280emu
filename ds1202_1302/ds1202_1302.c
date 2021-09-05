@@ -25,6 +25,7 @@
  */
 
 /* Revision: 2019-02-11 Michal Tomek z180emu */
+/* Revision: 2021-08-02 Tony Nicholson z280emu */
 
 //#include "vice.h"
 
@@ -198,7 +199,7 @@ rtc_ds1202_1302_t *ds1202_1302_init(char *device, int rtc_type)
         retval->clock_regs = rtc_get_loaded_clockregs();
     } else {
         retval->ram = lib_calloc(1, DS1202_1302_RAM_SIZE);
-        memset(retval->ram,0x55,sizeof(retval->ram));	// "random" bits
+        memset(retval->ram, 0x55, DS1202_1302_REG_SIZE);	// "random" bits
         retval->offset = 0;
         retval->clock_regs = lib_calloc(1, DS1202_1302_REG_SIZE);
     }

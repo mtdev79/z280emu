@@ -48,6 +48,7 @@ Example:
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 //#include "emu.h"
 //#include "debugger.h"
@@ -334,8 +335,11 @@ int z280_dma(struct z280_state *cpustate, int channel);
 void cpu_burn_z280(device_t *device, int cycles);
 //static void cpu_set_info_z280(device_t *device, UINT32 state, cpuinfo *info);
 void z280_reload_timer(struct z280_state *cpustate, int unit);
+void check_dma_interrupt(struct z280_state *cpustate, int channel);
+int z280_take_dma(struct z280_state *cpustate);
 int check_interrupts(struct z280_state *cpustate);
 void set_irq_internal(device_t *device, int irq, int state);
+int take_trap(struct z280_state *cpustate, int trap);
 
 #include "z280ops.h"
 #include "z280tbl.h"
@@ -961,7 +965,7 @@ void z280_writeio_word(struct z280_state *cpustate, offs_t port, UINT16 data)
 			}*/
 			if (req != -1)
 			{
-				LOG("Z280 '%s' DMA%d service request\n", cpustate->device->m_tag, req, data);
+				LOG("Z280 '%s' DMA%d service request\n", cpustate->device->m_tag, req);
 				cpustate->dma_pending[req] = 1;
 			}
 		}
@@ -1012,7 +1016,7 @@ void z280_writeio_word(struct z280_state *cpustate, offs_t port, UINT16 data)
 					}
 					if (req != -1)
 					{
-						LOG("Z280 '%s' DMA%d service request\n", cpustate->device->m_tag, req, data);
+						LOG("Z280 '%s' DMA%d service request\n", cpustate->device->m_tag, req);
 						cpustate->dma_pending[req] = 1;
 					}
 					check_dma_interrupt(cpustate, unit);
@@ -1099,7 +1103,7 @@ int z280_check_dma(struct z280_state *cpustate)
 	cpustate->dmacnt[channel]--; \
 }
 
-int check_dma_interrupt(struct z280_state *cpustate, int channel) {
+void check_dma_interrupt(struct z280_state *cpustate, int channel) {
 	int irq;
 	switch (channel)
 	{
@@ -1156,13 +1160,13 @@ int z280_take_dma(struct z280_state *cpustate)
 						INCR_DAR_SAR(1);
 						break;
 					default:
-						LOG("Z280 '%s' DMA%d invalid size $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
+						LOG("Z280 '%s' DMA%d invalid size $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
 						break;
 				}
 			}
 			else
 			{
-				LOG("Z280 '%s' DMA%d invalid transaction type $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
+				LOG("Z280 '%s' DMA%d invalid transaction type $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
 			}
 		}
 		else if ((cpustate->dmatdr[channel] & Z280_DMATDR_DAD) <= Z280_DMATDR_DAD_M && (cpustate->dmatdr[channel] & Z280_DMATDR_SAD) >= Z280_DMATDR_SAD_INCIO && (cpustate->dmatdr[channel] & Z280_DMATDR_SAD) <= Z280_DMATDR_SAD_IO)
@@ -1173,7 +1177,7 @@ int z280_take_dma(struct z280_state *cpustate)
 				switch (cpustate->dmatdr[channel] & Z280_DMATDR_ST)
 				{
 					case Z280_DMATDR_ST_LONG:
-						LOG("Z280 '%s' DMA%d unimplemented move l M<-I dar=%06X sar=%06X\n", cpustate->device->m_tag, channel,  cpustate->dar[channel], cpustate->sar[channel], data);
+						LOG("Z280 '%s' DMA%d unimplemented move l M<-I dar=%06X sar=%06X $%04X\n", cpustate->device->m_tag, channel,  cpustate->dar[channel], cpustate->sar[channel], data);
 						break;
 					case Z280_DMATDR_ST_WORD:
 						data = IN16(cpustate, cpustate->sar[channel]);
@@ -1188,13 +1192,13 @@ int z280_take_dma(struct z280_state *cpustate)
 						INCR_DAR_SAR(1);
 						break;
 					default:
-						LOG("Z280 '%s' DMA%d invalid size $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
+						LOG("Z280 '%s' DMA%d invalid size $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
 						break;
 				}
 			}
 			else
 			{
-				LOG("Z280 '%s' DMA%d invalid transaction type $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
+				LOG("Z280 '%s' DMA%d invalid transaction type $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
 			}
 		}
 		else if ((cpustate->dmatdr[channel] & Z280_DMATDR_DAD) >= Z280_DMATDR_DAD_INCIO && (cpustate->dmatdr[channel] & Z280_DMATDR_DAD) <= Z280_DMATDR_DAD_IO && (cpustate->dmatdr[channel] & Z280_DMATDR_SAD) <= Z280_DMATDR_SAD_M)
@@ -1205,7 +1209,7 @@ int z280_take_dma(struct z280_state *cpustate)
 				switch (cpustate->dmatdr[channel] & Z280_DMATDR_ST)
 				{
 					case Z280_DMATDR_ST_LONG:
-						LOG("Z280 '%s' DMA%d unimplemented move l I<-M dar=%06X sar=%06X\n", cpustate->device->m_tag, channel,  cpustate->dar[channel], cpustate->sar[channel], data);
+						LOG("Z280 '%s' DMA%d unimplemented move l I<-M dar=%06X sar=%06X $%04X\n", cpustate->device->m_tag, channel,  cpustate->dar[channel], cpustate->sar[channel], data);
 						break;
 					case Z280_DMATDR_ST_WORD:
 						data = cpustate->ram->read_word(cpustate->sar[channel]&0xfffffe);
@@ -1220,13 +1224,13 @@ int z280_take_dma(struct z280_state *cpustate)
 						INCR_DAR_SAR(1);
 						break;
 					default:
-						LOG("Z280 '%s' DMA%d invalid size $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
+						LOG("Z280 '%s' DMA%d invalid size $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
 						break;
 				}
 			}
 			else
 			{
-				LOG("Z280 '%s' DMA%d invalid transaction type $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
+				LOG("Z280 '%s' DMA%d invalid transaction type $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
 			}
 		}
 		else if ((cpustate->dmatdr[channel] & Z280_DMATDR_DAD) >= Z280_DMATDR_DAD_INCIO && (cpustate->dmatdr[channel] & Z280_DMATDR_DAD) <= Z280_DMATDR_DAD_IO 
@@ -1250,13 +1254,13 @@ int z280_take_dma(struct z280_state *cpustate)
 						INCR_DAR_SAR(1);
 						break;
 					default:
-						LOG("Z280 '%s' DMA%d invalid size $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
+						LOG("Z280 '%s' DMA%d invalid size $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_ST)>>9);
 						break;
 				}
 			}
 			else
 			{
-				LOG("Z280 '%s' DMA%d invalid transaction type $02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
+				LOG("Z280 '%s' DMA%d invalid transaction type $%02X\n", cpustate->device->m_tag, channel, (cpustate->dmatdr[channel] & Z280_DMATDR_TYPE)>>5);
 			}
 		}
 
