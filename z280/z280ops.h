@@ -1570,6 +1570,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_BC )                                                 \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xb0);                                            \
 	}
 
@@ -1581,6 +1582,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_BC && !(cpustate->_F & ZF) )                                     \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xb1);                                            \
 	}
 
@@ -1592,6 +1594,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xb2);                                            \
 	}
 
@@ -1600,6 +1603,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0x92);                                            \
 	}
 
@@ -1611,6 +1615,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xb3);                                            \
 	}
 
@@ -1619,6 +1624,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0x93);                                            \
 	}
 
@@ -1630,6 +1636,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_BC )                                                 \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xb8);                                            \
 	}
 
@@ -1641,6 +1648,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_BC && !(cpustate->_F & ZF) )                                     \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xb9);                                            \
 	}
 
@@ -1652,6 +1660,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xba);                                            \
 	}
 
@@ -1660,6 +1669,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0x9a);                                            \
 	}
 
@@ -1671,6 +1681,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0xbb);                                            \
 	}
 
@@ -1679,6 +1690,7 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 	if( cpustate->_B )                                                  \
 	{                                                           \
 		cpustate->_PC -= 2;                                             \
+		MSR(cpustate) &= ~Z280_MSR_SSP;                         \
 		CC(ex,0x9b);                                            \
 	}
 
