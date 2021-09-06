@@ -332,7 +332,10 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 	cpustate->_PPC = -1;
 
 	/* Check if processor was halted */
-	LEAVE_HALT(cpustate);
+	if (cpustate->abort_type != Z280_ABORT_FATAL)
+	{
+		LEAVE_HALT(cpustate);
+	}
 
 	if(cpustate->IM != 3 && (irq == Z280_INT_NMI || irq == Z280_INT_IRQ0 || irq == Z280_INT_IRQ1 || irq == Z280_INT_IRQ2))
 	{
@@ -342,7 +345,9 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 			cpustate->IFF2 = cpustate->cr[Z280_MSR] & Z280_MSR_IREMASK;
 			/* Clear MSR */
 			MSR(cpustate) &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
+			cpustate->abort_type = Z280_ABORT_FATAL;
 			PUSH(cpustate,  PC );
+			cpustate->abort_type = Z280_ABORT_ACCV;
 			cpustate->_PCD = 0x0066;
 			LOG("Z280 '%s' NMI $0066\n", cpustate->device->m_tag);
 			//cpustate->IO_DSTAT &= ~Z280_DSTAT_DME;
@@ -363,6 +368,7 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 					/* was placed on the databus                                */
 					irq_vector = get_irq_vector(cpustate, irq);
 					LOG("Z280 '%s' IM0 $%06x\n",cpustate->device->m_tag , irq_vector);
+					cpustate->abort_type = Z280_ABORT_FATAL;
 					switch (irq_vector & 0xff0000)
 					{
 						case 0xcd0000:  /* call */
@@ -383,13 +389,16 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 							cycles += cpustate->cc[Z280_TABLE_op][cpustate->_PCD] - cpustate->cc[Z280_TABLE_ex][cpustate->_PCD];
 							break;
 					}
+					cpustate->abort_type = Z280_ABORT_ACCV;
 					break;
 				case 1:
 					/* Interrupt mode 1. RST 38h */
 					/* Clear MSR */
 					MSR(cpustate) &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
 					LOG("Z280 '%s' IM1 $0038\n",cpustate->device->m_tag );
+					cpustate->abort_type = Z280_ABORT_FATAL;
 					PUSH(cpustate,  PC );
+					cpustate->abort_type = Z280_ABORT_ACCV;
 					cpustate->_PCD = 0x0038;
 					/* RST $38 + 'interrupt latency' cycles */
 					cycles += cpustate->cc[Z280_TABLE_op][0xff] - cpustate->cc[Z280_TABLE_ex][0xff];
@@ -400,7 +409,9 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 					irq_vector = get_irq_vector(cpustate, irq);
 					MSR(cpustate) &= ~(Z280_MSR_US | Z280_MSR_SS | Z280_MSR_IREMASK);
 					irq_vector = (irq_vector & 0xff) + (cpustate->I << 8);
+					cpustate->abort_type = Z280_ABORT_FATAL;
 					PUSH(cpustate,  PC );
+					cpustate->abort_type = Z280_ABORT_ACCV;
 					RM16( cpustate, irq_vector, &cpustate->PC ); // system mode p.6-2
 					LOG("Z280 '%s' IM2 [$%02x] = $%04x\n",cpustate->device->m_tag , irq_vector, cpustate->_PCD);
 					/* CALL opcode timing */
@@ -528,6 +539,7 @@ void TRAP(struct z280_state *cpustate, int vector, int trapsave)
 	// switch to system mode
 	MSR(cpustate) &= ~Z280_MSR_US;
 	// save state
+	cpustate->abort_type = Z280_ABORT_FATAL;
 	cpustate->_SSP-=2;
 	if (trapsave&Z280_TRAPSAVE_PREPC)
 	{
@@ -553,6 +565,7 @@ void TRAP(struct z280_state *cpustate, int vector, int trapsave)
 		tmparg.w.l = cpustate->_PC - 4;
 		cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &tmparg);
 	}
+	cpustate->abort_type = Z280_ABORT_ACCV;
 	// load IV
 	offs_t ivaddr = CALC_IVADDR(cpustate, vector);
 	MSR(cpustate) = RM16PHY(cpustate,ivaddr);
@@ -609,4 +622,13 @@ int take_trap(struct z280_state *cpustate, int trap)
 			break;
 	}
 	return cycles;
+}
+
+int take_fatal(struct z280_state *cpustate)
+{
+	cpustate->_HL = cpustate->_PC;
+	cpustate->_DE = MSR(cpustate);
+	cpustate->cr[Z280_MSR] &= ~Z280_MSR_IREMASK;
+	cpustate->HALT = 1;
+	return 15;
 }

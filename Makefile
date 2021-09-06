@@ -2,7 +2,7 @@ ifeq ($(OS),Windows_NT)
 	SOCKLIB = -lws2_32
 endif
 
-CCOPTS ?= -O3 -DSOCKETCONSOLE -std=gnu89 -fcommon
+CCOPTS += -O3 -DSOCKETCONSOLE -std=gnu89 -fcommon
 
 all: z280rc makedisk
 

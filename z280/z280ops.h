@@ -144,15 +144,13 @@ INLINE offs_t MMU_REMAP_ADDR(struct z280_state *cpustate, offs_t addr, int progr
 					}
 					else // attempt to write to a write-protected page
 					{
-						take_trap(cpustate, Z280_TRAP_ACCV);
-						res = MMU_REMAP_ADDR_FAILED;
+						longjmp(cpustate->abort_handler, 1);
 					}
 				}
 			}
-			else // attept to access an invalid page
+			else // attempt to access an invalid page
 			{
-				take_trap(cpustate, Z280_TRAP_ACCV);
-				res = MMU_REMAP_ADDR_FAILED;
+				longjmp(cpustate->abort_handler, 1);
 			}
 		}
 		else
@@ -181,15 +179,13 @@ INLINE offs_t MMU_REMAP_ADDR(struct z280_state *cpustate, offs_t addr, int progr
 					}
 					else // attempt to write to a write-protected page
 					{
-						take_trap(cpustate, Z280_TRAP_ACCV);
-						res = MMU_REMAP_ADDR_FAILED;
+						longjmp(cpustate->abort_handler, 1);
 					}
 				}
 			}
-			else // attept to access an invalid page
+			else // attempt to access an invalid page
 			{
-				take_trap(cpustate, Z280_TRAP_ACCV);
-				res = MMU_REMAP_ADDR_FAILED;
+				longjmp(cpustate->abort_handler, 1);
 			}
 		}
 		else
@@ -228,7 +224,7 @@ INLINE offs_t MMU_REMAP_ADDR_LDU(struct z280_state *cpustate, offs_t addr, int p
 				}
 			}
 		}
-		else // attept to access an invalid page
+		else // attempt to access an invalid page
 		{
 			res = MMU_REMAP_ADDR_FAILED;
 		}

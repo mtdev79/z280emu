@@ -82,6 +82,9 @@ enum
 #define Z280_TRAPSAVE_EPU     4
 #define Z280_TRAPSAVE_EA      8
 
+#define Z280_ABORT_ACCV   0
+#define Z280_ABORT_FATAL  1
+
 /* interrupt priorities */
 #define Z280_INT_NMI    0           /* NMI */
 #define Z280_INT_IRQ0   1           /* Group0: external IRQ0 */

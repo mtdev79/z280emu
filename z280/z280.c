@@ -31,7 +31,7 @@ Known clock speeds (from ZiLOG): 10, 12.5 MHz
 
 ZiLOG Z280 codes:
 
-  Speed: 10 = 10MHZ
+  Speed: 10 = 10MHz
          12 = 12.5MHz
 Package: V = 68-Pin PLCC
    Temp: S = 0C to +70C
@@ -49,6 +49,7 @@ Example:
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <setjmp.h>
 
 //#include "emu.h"
 //#include "debugger.h"
@@ -102,6 +103,8 @@ struct z280_state
 	int icount;
 	int extra_cycles;           /* extra cpu cycles */
 	UINT8 *cc[8];	/* cycle count tables */
+	jmp_buf abort_handler;
+	UINT8 abort_type;                       /* which abort will be taken upon ACCV */
 };
 
 INLINE struct z280_state *get_safe_token(device_t *device)
@@ -1515,6 +1518,7 @@ void cpu_reset_z280(device_t *device)
 	cpustate->irq_state[2] = CLEAR_LINE;
 	cpustate->after_EI = 0;
 	cpustate->ea = 0;
+	cpustate->abort_type = Z280_ABORT_ACCV;	// default is ACCV
 
 	memcpy(cpustate->cc, (UINT8 *)cc_default, sizeof(cpustate->cc));
 	//cpustate->_IX = cpustate->_IY = 0;
@@ -1746,8 +1750,20 @@ void cpu_execute_z280(device_t *device, int icount)
 			else
 			{
 				MSR(cpustate) = (MSR(cpustate)&Z280_MSR_SS)? (MSR(cpustate)|Z280_MSR_SSP) : (MSR(cpustate)&~Z280_MSR_SSP);
-				curcycles += exec_op(cpustate,ROP(cpustate));
-				curcycles += cpustate->extra_cycles;
+				if (setjmp(cpustate->abort_handler) == 0)
+				{
+					// try to execute the instruction
+					curcycles += exec_op(cpustate,ROP(cpustate));
+					curcycles += cpustate->extra_cycles;
+				}
+				else if (cpustate->abort_type == Z280_ABORT_ACCV)
+				{
+					take_trap(cpustate, Z280_TRAP_ACCV);
+				}
+				else
+				{
+					take_fatal(cpustate);
+				}
 			}
 		}
 		else
