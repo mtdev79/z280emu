@@ -1741,11 +1741,10 @@ void cpu_execute_z280(device_t *device, int icount)
 		if (!cpustate->HALT)
 		{
 			//cpustate->R++;
-			cpustate->extra_cycles = 0;
 			if (MSR(cpustate)&Z280_MSR_SSP)
 			{
 				MSR(cpustate) &= ~Z280_MSR_SSP;
-				take_trap(cpustate, Z280_TRAP_SS);
+				curcycles += take_trap(cpustate, Z280_TRAP_SS);
 			}
 			else
 			{
@@ -1753,16 +1752,17 @@ void cpu_execute_z280(device_t *device, int icount)
 				if (setjmp(cpustate->abort_handler) == 0)
 				{
 					// try to execute the instruction
+					cpustate->extra_cycles = 0;
 					curcycles += exec_op(cpustate,ROP(cpustate));
 					curcycles += cpustate->extra_cycles;
 				}
 				else if (cpustate->abort_type == Z280_ABORT_ACCV)
 				{
-					take_trap(cpustate, Z280_TRAP_ACCV);
+					curcycles += take_trap(cpustate, Z280_TRAP_ACCV);
 				}
 				else
 				{
-					take_fatal(cpustate);
+					curcycles += take_fatal(cpustate);
 				}
 			}
 		}

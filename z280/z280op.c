@@ -626,7 +626,7 @@ int take_trap(struct z280_state *cpustate, int trap)
 
 int take_fatal(struct z280_state *cpustate)
 {
-	cpustate->_HL = cpustate->_PC;
+	cpustate->_HL = cpustate->_PPC;
 	cpustate->_DE = MSR(cpustate);
 	cpustate->cr[Z280_MSR] &= ~Z280_MSR_IREMASK;
 	cpustate->HALT = 1;

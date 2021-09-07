@@ -278,11 +278,7 @@ INLINE offs_t MMU_REMAP_ADDR_DBG(struct z280_state *cpustate, offs_t addr, int p
 INLINE UINT8 RM(struct z280_state *cpustate, offs_t addr)
 {
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,0,0);
-	if (phy != MMU_REMAP_ADDR_FAILED)
-	{
-		return cpustate->ram->read_byte(phy);
-	}
-	return 0;
+	return cpustate->ram->read_byte(phy);
 }
 
 /***************************************************************
@@ -291,10 +287,7 @@ INLINE UINT8 RM(struct z280_state *cpustate, offs_t addr)
 INLINE void WM(struct z280_state *cpustate, offs_t addr, UINT8 value)
 {
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,0,1);
-	if (phy != MMU_REMAP_ADDR_FAILED)
-	{
-		cpustate->ram->write_byte(phy,value);
-	}
+	cpustate->ram->write_byte(phy,value);
 }
 
 /***************************************************************
@@ -303,17 +296,14 @@ INLINE void WM(struct z280_state *cpustate, offs_t addr, UINT8 value)
 INLINE void RM16( struct z280_state *cpustate, offs_t addr, union PAIR *r )
 {
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,0,0);
-	if (phy != MMU_REMAP_ADDR_FAILED)
+	if (cpustate->device->m_bus16)
 	{
-		if (cpustate->device->m_bus16)
-		{
-			r->w.l = cpustate->ram->read_word(phy);
-		}
-		else
-		{
-			r->b.l = cpustate->ram->read_byte(phy);
-			r->b.h = cpustate->ram->read_byte(phy+1);
-		}
+		r->w.l = cpustate->ram->read_word(phy);
+	}
+	else
+	{
+		r->b.l = cpustate->ram->read_byte(phy);
+		r->b.h = cpustate->ram->read_byte(phy+1);
 	}
 }
 
@@ -323,17 +313,14 @@ INLINE void RM16( struct z280_state *cpustate, offs_t addr, union PAIR *r )
 INLINE void WM16( struct z280_state *cpustate, offs_t addr, union PAIR *r )
 {
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,0,1);
-	if (phy != MMU_REMAP_ADDR_FAILED)
+	if (cpustate->device->m_bus16)
 	{
-		if (cpustate->device->m_bus16)
-		{
-			cpustate->ram->write_word(phy,r->w.l);
-		}
-		else
-		{
-			cpustate->ram->write_byte(phy,r->b.l);
-			cpustate->ram->write_byte(phy+1,r->b.h);
-		}
+		cpustate->ram->write_word(phy,r->w.l);
+	}
+	else
+	{
+		cpustate->ram->write_byte(phy,r->b.l);
+		cpustate->ram->write_byte(phy+1,r->b.h);
 	}
 }
 
@@ -362,12 +349,8 @@ INLINE UINT8 ROP(struct z280_state *cpustate)
 	// TODO word fetch if bus16
 	offs_t addr = cpustate->_PCD;
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,1,0);
-	if (phy != MMU_REMAP_ADDR_FAILED)
-	{
-		cpustate->_PC++;
-		return cpustate->ram->read_raw_byte(phy);
-	}
-	return 0;
+	cpustate->_PC++;
+	return cpustate->ram->read_raw_byte(phy);
 }
 
 /****************************************************************
@@ -381,12 +364,8 @@ INLINE UINT8 ARG(struct z280_state *cpustate)
 	// TODO word fetch if bus16
 	offs_t addr = cpustate->_PCD;
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,1,0);
-	if (phy != MMU_REMAP_ADDR_FAILED)
-	{
-		cpustate->_PC++;
-		return cpustate->ram->read_raw_byte(phy);
-	}
-	return 0;
+	cpustate->_PC++;
+	return cpustate->ram->read_raw_byte(phy);
 }
 
 INLINE UINT32 ARG16(struct z280_state *cpustate)
@@ -394,19 +373,15 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 	// TODO unaligned fetch if bus16
 	offs_t addr = cpustate->_PCD;
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,1,0);
-	if (phy != MMU_REMAP_ADDR_FAILED)
+	cpustate->_PC += 2;
+	if (cpustate->device->m_bus16)
 	{
-		cpustate->_PC += 2;
-		if (cpustate->device->m_bus16)
-		{
-			return cpustate->ram->read_raw_word(phy);
-		}
-		else
-		{
-			return (UINT32)cpustate->ram->read_raw_byte(phy)|((UINT32)cpustate->ram->read_raw_byte(phy)<<8);
-		}
+		return cpustate->ram->read_raw_word(phy);
 	}
-	return 0;
+	else
+	{
+		return (UINT32)cpustate->ram->read_raw_byte(phy)|((UINT32)cpustate->ram->read_raw_byte(phy)<<8);
+	}
 }
 
 /***************************************************************
@@ -433,7 +408,7 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 /***************************************************************
  * PUSH
  ***************************************************************/
-#define PUSH(cs,SR) { DEC2_SP(cs); WM16(cs, _SPD(cs), &(cs)->SR); }
+#define PUSH(cs,SR) { WM16(cs, _SPD(cs)-2, &(cs)->SR); DEC2_SP(cs); }
 
 /***************************************************************
  * JP
@@ -587,13 +562,15 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 }
 
 #define RETIL    {                                               \
-	union PAIR tmp;                                              \
+	union PAIR tmp, tmp2;                                              \
 	CHECK_PRIV(cpustate)												  \
 	{															\
-		RM16(cpustate, _SPD(cpustate), &tmp); INC2_SP(cpustate);   \
-		/* need to pop PC first using current MSR */                  \
-		POP(cpustate, PC);                                                  \
+		/* atomic double pop */					                \
+		RM16(cpustate, _SPD(cpustate), &tmp);                    \
+		RM16(cpustate, _SPD(cpustate)+2, &tmp2);                    \
+		if(is_system(cpustate)) (cpustate)->_SSP += 4; else (cpustate)->_USP += 4;   \
 		MSR(cpustate) = tmp.w.l;                   \
+		cpustate->_PC = tmp2.w.l;                   \
 	}															\
 }
 
@@ -1398,8 +1375,8 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
  ***************************************************************/
 #define INI {                                                   \
 	UINT8 io = IN(cpustate, cpustate->_BC);                                         \
-	cpustate->_B--;                                                     \
 	WM(cpustate,  cpustate->_HL, io );                                              \
+	cpustate->_B--;                                                     \
 	cpustate->_HL++;                                                        \
 	cpustate->_F = SZ[cpustate->_B];                                                \
 	if( io & SF ) cpustate->_F |= NF;                                   \
@@ -1413,9 +1390,9 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 
 #define INIW {                                                   \
 	UINT16 io = IN16(cpustate, cpustate->_BC);                                         \
-	cpustate->_B--;                                                     \
 	union PAIR tmp; tmp.w.l = io;                                            \
 	WM16(cpustate,  cpustate->_HL, &tmp );                                              \
+	cpustate->_B--;                                                     \
 	cpustate->_HL += 2;                                                        \
 	cpustate->_F = SZ[cpustate->_B];                                                \
 	if( io & SF ) cpustate->_F |= NF;                                   \
@@ -1494,8 +1471,8 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
  ***************************************************************/
 #define IND {                                                   \
 	UINT8 io = IN(cpustate, cpustate->_BC);                                         \
-	cpustate->_B--;                                                     \
 	WM(cpustate,  cpustate->_HL, io );                                              \
+	cpustate->_B--;                                                     \
 	cpustate->_HL--;                                                        \
 	cpustate->_F = SZ[cpustate->_B];                                                \
 	if( io & SF ) cpustate->_F |= NF;                                   \
@@ -1509,9 +1486,9 @@ INLINE UINT8 SET(UINT8 bit, UINT8 value)
 
 #define INDW {                                                   \
 	UINT16 io = IN16(cpustate, cpustate->_BC);                                         \
-	cpustate->_B--;                                                     \
 	union PAIR tmp; tmp.w.l = io;												\
 	WM16(cpustate,  cpustate->_HL, &tmp );                                              \
+	cpustate->_B--;                                                     \
 	cpustate->_HL -= 2;                                                        \
 	cpustate->_F = SZ[cpustate->_B];                                                \
 	if( io & SF ) cpustate->_F |= NF;                                   \

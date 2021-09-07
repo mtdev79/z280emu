@@ -230,7 +230,7 @@ OP(dd,c1) { union PAIR tmp; RM16(cpustate, _SPD(cpustate), &tmp ); WM16(cpustate
 OP(dd,c2) { JP_HL_COND( !(cpustate->_F & ZF) );                                     } /* JP NZ, (HL)      */
 OP(dd,c3) { illegal_1(cpustate); op_c3(cpustate);                                   } /* DB   DD          */
 OP(dd,c4) { CALL_HL_COND( !(cpustate->_F & ZF), 0xc4);                              } /* CALL NZ, (HL)    */
-OP(dd,c5) { union PAIR tmp; DEC2_SP(cpustate); RM16(cpustate, (cpustate)->_HL, &tmp ); WM16(cpustate, _SPD(cpustate), &tmp); } /* PUSH (HL)        */
+OP(dd,c5) { union PAIR tmp; RM16(cpustate, (cpustate)->_HL, &tmp ); WM16(cpustate, _SPD(cpustate)-2, &tmp); DEC2_SP(cpustate); } /* PUSH (HL)        */
 OP(dd,c6) { illegal_1(cpustate); op_c6(cpustate);                                   } /* DB   DD          */
 OP(dd,c7) { illegal_1(cpustate); op_c7(cpustate);                                   }         /* DB   DD          */
 
@@ -248,7 +248,7 @@ OP(dd,d1) { union PAIR tmp; cpustate->ea = ARG16(cpustate); RM16(cpustate, _SPD(
 OP(dd,d2) { JP_HL_COND( !(cpustate->_F & CF) );                                     } /* JP NC, (HL)      */
 OP(dd,d3) { illegal_1(cpustate); op_d3(cpustate);                                   } /* DB   DD          */
 OP(dd,d4) { CALL_HL_COND( !(cpustate->_F & CF), 0xd4);                              } /* CALL NC, (HL)    */
-OP(dd,d5) { union PAIR tmp; cpustate->ea = ARG16(cpustate); DEC2_SP(cpustate); RM16(cpustate, (cpustate)->ea, &tmp ); WM16(cpustate, _SPD(cpustate), &tmp); } /* PUSH (w)         */
+OP(dd,d5) { union PAIR tmp; cpustate->ea = ARG16(cpustate); RM16(cpustate, (cpustate)->ea, &tmp ); WM16(cpustate, _SPD(cpustate)-2, &tmp); DEC2_SP(cpustate); } /* PUSH (w)         */
 OP(dd,d6) { illegal_1(cpustate); op_d6(cpustate);                                   } /* DB   DD          */
 OP(dd,d7) { illegal_1(cpustate); op_d7(cpustate);                                   } /* DB   DD          */
 
@@ -284,7 +284,7 @@ OP(dd,f1) { union PAIR tmp; EARA(cpustate); RM16(cpustate, cpustate->ea, &tmp );
 OP(dd,f2) { JP_HL_COND( !(cpustate->_F & SF) );                                     } /* JP P, (HL)       */
 OP(dd,f3) { illegal_1(cpustate); op_f3(cpustate);                                   } /* DB   DD          */
 OP(dd,f4) { CALL_HL_COND( !(cpustate->_F & SF), 0xf4);                              } /* CALL P, (HL)     */
-OP(dd,f5) { union PAIR tmp; EARA(cpustate); DEC2_SP(cpustate); RM16(cpustate, (cpustate)->_HL, &tmp ); WM16(cpustate, cpustate->ea, &tmp); } /* PUSH (ra)        */
+OP(dd,f5) { union PAIR tmp; EARA(cpustate); RM16(cpustate, (cpustate)->_HL, &tmp ); WM16(cpustate, cpustate->ea-2, &tmp); DEC2_SP(cpustate); } /* PUSH (ra)        */
 OP(dd,f6) { illegal_1(cpustate); op_f6(cpustate);                                   } /* DB   DD          */
 OP(dd,f7) { illegal_1(cpustate); op_f7(cpustate);                                   } /* DB   DD          */
 

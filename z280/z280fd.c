@@ -276,7 +276,7 @@ OP(fd,f1) { illegal_1(cpustate); op_f1(cpustate);                               
 OP(fd,f2) { JP_RA_COND( !(cpustate->_F & SF) );                                     } /* JP P, (ra)       */
 OP(fd,f3) { illegal_1(cpustate); op_f3(cpustate);                                   } /* DB   FD          */
 OP(fd,f4) { CALL_RA_COND( !(cpustate->_F & SF), 0xf4);                              } /* CALL P, (ra)     */
-OP(fd,f5) { union PAIR tmp; tmp.w.l = ARG16(cpustate); DEC2_SP(cpustate); WM16(cpustate, _SPD(cpustate), &tmp); } /* PUSH w           */
+OP(fd,f5) { union PAIR tmp; tmp.w.l = ARG16(cpustate); WM16(cpustate, _SPD(cpustate)-2, &tmp); DEC2_SP(cpustate); } /* PUSH w           */
 OP(fd,f6) { illegal_1(cpustate); op_f6(cpustate);                                   } /* DB   FD          */
 OP(fd,f7) { illegal_1(cpustate); op_f7(cpustate);                                   } /* DB   FD          */
 
