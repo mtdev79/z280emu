@@ -231,7 +231,7 @@ OP(fd,c9) { illegal_1(cpustate); op_c9(cpustate);                               
 OP(fd,ca) { JP_RA_COND( cpustate->_F & ZF );                                        } /* JP Z, (ra)       */
 OP(fd,cb) { EAY(cpustate); cpustate->extra_cycles += exec_xycb(cpustate,ARG(cpustate));                          } /* **   FD CB xx    */
 OP(fd,cc) { CALL_RA_COND( cpustate->_F & ZF, 0xcc);                                 } /* CALL Z, (ra)     */
-OP(fd,cd) { PUSH(cpustate,  PC ); EARA(cpustate); cpustate->_PCD = cpustate->ea;    } /* CALL (ra)        */
+OP(fd,cd) { PUSH_R(cpustate, PC); EARA(cpustate); cpustate->_PCD = cpustate->ea; if(is_system(cpustate)) CHECK_SSO(cpustate); } /* CALL (ra)        */
 OP(fd,ce) { illegal_1(cpustate); op_ce(cpustate);                                   } /* DB   FD          */
 OP(fd,cf) { illegal_1(cpustate); op_cf(cpustate);                                   } /* DB   FD          */
 
@@ -276,7 +276,7 @@ OP(fd,f1) { illegal_1(cpustate); op_f1(cpustate);                               
 OP(fd,f2) { JP_RA_COND( !(cpustate->_F & SF) );                                     } /* JP P, (ra)       */
 OP(fd,f3) { illegal_1(cpustate); op_f3(cpustate);                                   } /* DB   FD          */
 OP(fd,f4) { CALL_RA_COND( !(cpustate->_F & SF), 0xf4);                              } /* CALL P, (ra)     */
-OP(fd,f5) { union PAIR tmp; tmp.w.l = ARG16(cpustate); WM16(cpustate, _SPD(cpustate)-2, &tmp); DEC2_SP(cpustate); } /* PUSH w           */
+OP(fd,f5) { union PAIR tmp; tmp.w.l = ARG16(cpustate); WM16(cpustate, _SPD(cpustate)-2, &tmp); DEC2_SP(cpustate); if(is_system(cpustate)) CHECK_SSO(cpustate); } /* PUSH w           */
 OP(fd,f6) { illegal_1(cpustate); op_f6(cpustate);                                   } /* DB   FD          */
 OP(fd,f7) { illegal_1(cpustate); op_f7(cpustate);                                   } /* DB   FD          */
 

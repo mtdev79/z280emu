@@ -41,6 +41,14 @@ if (!((cs)->cr[Z280_TCR]&Z280_TCR_E))                         \
 }															  \
 else														  
 
+#define CHECK_SSO(cs)                                         \
+if ((cs)->cr[Z280_TCR]&Z280_TCR_S &&                          \
+  (((cs)->_SSP) & 0xfff0) == SSLR(cs) )                       \
+{                                                             \
+	take_trap(cs, Z280_TRAP_SSO);			                  \
+}															  \
+
+
 /***************************************************************
  * Internal IO select
  ***************************************************************/
@@ -408,7 +416,8 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 /***************************************************************
  * PUSH
  ***************************************************************/
-#define PUSH(cs,SR) { WM16(cs, _SPD(cs)-2, &(cs)->SR); DEC2_SP(cs); }
+#define PUSH_R(cs,SR) { WM16(cs, _SPD(cs)-2, &(cs)->SR); DEC2_SP(cs); }
+#define PUSH(cs,SR) { PUSH_R(cs,SR); if(is_system(cs)) CHECK_SSO(cs); }
 
 /***************************************************************
  * JP
@@ -480,8 +489,9 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
  ***************************************************************/
 #define CALL()                                                  \
 	cpustate->ea = ARG16(cpustate);                                             \
-	PUSH(cpustate,  PC );                                               \
-	cpustate->_PCD = cpustate->ea;
+	PUSH_R(cpustate,  PC );                                               \
+	cpustate->_PCD = cpustate->ea;								\
+	if(is_system(cpustate)) CHECK_SSO(cpustate);
 
 /***************************************************************
  * CALL_COND
@@ -489,9 +499,7 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 #define CALL_COND(cond,opcode)                                  \
 	if( cond )                                                  \
 	{                                                           \
-		cpustate->ea = ARG16(cpustate);                                         \
-		PUSH(cpustate,  PC );                                           \
-		cpustate->_PCD = cpustate->ea;                                              \
+		CALL();													\
 		CC(ex,opcode);                                          \
 	}                                                           \
 	else                                                        \
@@ -502,8 +510,9 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 #define CALL_HL_COND(cond,opcode)                                  \
 	if( cond )                                                  \
 	{                                                           \
-		PUSH(cpustate,  PC );                                           \
+		PUSH_R(cpustate,  PC );                                               \
 		cpustate->_PCD = cpustate->_HL;                                              \
+		if(is_system(cpustate)) CHECK_SSO(cpustate);            \
 		CC(ex,opcode);                                          \
 	}                                                           \
 	else                                                        \
@@ -514,8 +523,9 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 #define CALL_RA_COND(cond,opcode)                                  \
 	if( cond )                                                  \
 	{                                                           \
-		PUSH(cpustate,  PC );                                           \
+		PUSH_R(cpustate,  PC );                                               \
 		EARA(cpustate); cpustate->_PCD = cpustate->ea;            \
+		if(is_system(cpustate)) CHECK_SSO(cpustate);            \
 		CC(ex,opcode);                                          \
 	}                                                           \
 	else                                                        \
@@ -676,8 +686,9 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
  * RST
  ***************************************************************/
 #define RST(addr)                                               \
-	PUSH(cpustate,  PC );                                               \
-	cpustate->_PCD = addr;
+	PUSH_R(cpustate,  PC );                                            \
+	cpustate->_PCD = addr;										 \
+	if(is_system(cpustate)) CHECK_SSO(cpustate);
 
 
 /***************************************************************

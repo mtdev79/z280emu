@@ -497,10 +497,12 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 		// switch to system mode
 		MSR(cpustate) &= ~Z280_MSR_US;
 		// save state
+		cpustate->abort_type = Z280_ABORT_FATAL;
 		cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &cpustate->PC); // PC of current instr
 		cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &tmp); // MSR
 		tmp.w.l = (UINT16)irq_vector;
 		cpustate->_SSP-=2; WM16(cpustate, cpustate->_SSPD, &tmp);
+		cpustate->abort_type = Z280_ABORT_ACCV;
 
 		// load IV
 		offs_t ivaddr = CALC_IVADDR(cpustate, vecoffs);
@@ -523,6 +525,7 @@ int take_interrupt(struct z280_state *cpustate, int irq)
 		/* CALL opcode timing */
 		cycles += cpustate->cc[Z280_TABLE_op][0xcd];
 	}
+	CHECK_SSO(cpustate);
 	return cycles;
 }
 
@@ -571,6 +574,7 @@ void TRAP(struct z280_state *cpustate, int vector, int trapsave)
 	MSR(cpustate) = RM16PHY(cpustate,ivaddr);
 	cpustate->_PCD = RM16PHY(cpustate,ivaddr+2);
 	LOG("Z280 '%s' TRAP IVT:%06x [$%02x] = $%04x,msr:$%04x\n",cpustate->device->m_tag , CALC_IVADDR(cpustate, 0), vector, cpustate->_PCD, MSR(cpustate));
+	CHECK_SSO(cpustate);
 }
 
 int take_trap(struct z280_state *cpustate, int trap)
@@ -595,6 +599,11 @@ int take_trap(struct z280_state *cpustate, int trap)
 		case Z280_TRAP_DIV:
 			TRAP(cpustate, 0x44, Z280_TRAPSAVE_PREPC);
 			cycles = 25;
+			break;
+		case Z280_TRAP_SSO:
+			(cpustate)->cr[Z280_TCR] &= ~Z280_TCR_S;
+			TRAP(cpustate, 0x48, 0);
+			cycles = 26;
 			break;
 		case Z280_TRAP_PRIV:
 			TRAP(cpustate, 0x54, Z280_TRAPSAVE_PREPC);

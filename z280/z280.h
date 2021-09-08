@@ -114,7 +114,7 @@ enum
 #define Z280_IOP   8     // I/O Page reg (byte) p.3-5
 #define Z280_BTI   0xFF  // Bus Timing and Initialization reg. (byte) p.3-1,3-2
 #define Z280_BTC   2     // Bus Timing and Control reg. (byte) p.3-2
-#define Z280_SLR   4     // Stack Limit reg. (word) p.3-6 
+#define Z280_SSLR  4     // System Stack Limit reg. (word) p.3-6 
 #define Z280_TCR   0x10  // Trap Control reg. (byte) p.3-5,3-6
 #define Z280_CCR   0x12  // Cache Control reg. (byte) p.3-3,3-4 
 #define Z280_LAR   0x14  // Local Address reg. (byte) p.3-3

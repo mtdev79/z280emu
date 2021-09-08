@@ -214,7 +214,7 @@ UINT8 interrupt_group[Z280_INT_MAX+1] = {-1, 0, 1, 1, 2, 3, 3, 3, 4, 5, 5, 6, 6}
 #define ISR(cs)      (*(UINT16*)&(cs)->cr[Z280_ISR])
 #define IVTP(cs)     (*(UINT16*)&(cs)->cr[Z280_IVTP])
 #define BTI(cs)      ((cs)->cr[3]) // store BTI at offset 3
-#define SLR(cs)      (*(UINT16*)&(cs)->cr[Z280_SLR])
+#define SSLR(cs)     (*(UINT16*)&(cs)->cr[Z280_SSLR])
 
 #define CALC_IVADDR(cs,n)    (((IVTP(cs)&0xfff0)<<8)+n)   // calc interrupt vector address
 
@@ -378,7 +378,7 @@ UINT16 z280_readcontrol(struct z280_state *cpustate, offs_t reg)
 			data = *(UINT16*)&cpustate->cr[reg];
 			LOG("Z280 '%s' IVTP rd $%04x\n", cpustate->device->m_tag, data);
 			break;
-		case Z280_SLR:
+		case Z280_SSLR:
 			data = *(UINT16*)&cpustate->cr[reg];
 			LOG("Z280 '%s' SLR rd $%04x\n", cpustate->device->m_tag, data);
 			break;
@@ -433,9 +433,9 @@ void z280_writecontrol(struct z280_state *cpustate, offs_t reg, UINT16 data)
 			LOG("Z280 '%s' IVTP wr $%04x\n", cpustate->device->m_tag, data);
 			*(UINT16*)&cpustate->cr[reg] = data;
 			break;
-		case Z280_SLR:
+		case Z280_SSLR:
 			LOG("Z280 '%s' SLR wr $%04x\n", cpustate->device->m_tag, data);
-			*(UINT16*)&cpustate->cr[reg] = data;
+			*(UINT16*)&cpustate->cr[reg] = data&0xfff0;
 			break;
 
 		/* 8 bit control registers */
