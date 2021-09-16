@@ -592,8 +592,8 @@ int take_trap(struct z280_state *cpustate, int trap)
 			cycles = 26;
 			break;
 		case Z280_TRAP_ACCV:
-			TRAP(cpustate, 0x4C, Z280_TRAPSAVE_PREPC);
 			MMUMCR(cpustate) = MMUMCR(cpustate) &~ Z280_MMUMCR_PFIMASK | cpustate->eapdr;
+			TRAP(cpustate, 0x4C, Z280_TRAPSAVE_PREPC);
 			cycles = 25;
 			break;
 		case Z280_TRAP_DIV:

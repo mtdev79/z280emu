@@ -101,14 +101,14 @@ INLINE void z280_mmu(struct z280_state *cpustate)
 INLINE offs_t mmu_translate_separate(struct z280_state *cpustate, offs_t addr, int mode, int program) {
 	offs_t offset, pfa;
 	offset = addr & 0x1fff; // low 13b is offset
-	// PC-relative addressing uses high 7 (program) PDRs; other use low 7 PDRs
+	// PC-relative addressing uses high 8 (program) PDRs; other use low 8 PDRs
 	int index = ((addr >> 13) & 7) | (program<<3); // high 3b is index
 	if (!mode) index += 16; // system (mode=0) -> pdrs 16-31
 	cpustate->eapdr = index;
 	// extract page frame from the PDR
 	pfa = (offs_t)(cpustate->pdr[index] & (Z280_PDR_PFA &~0x0010) ) << 8; // LSB of PFA is set to 0
 #ifdef MMU_DEBUG
-	LOG("mmu_translate_sep index=%d,offs=%04X,pfa=%06X\n", index, offset, pfa);
+	LOG("mmu_translate_sep index=%d,pdr=%04X,offs=%04X,pfa=%06X\n", index, cpustate->pdr[index], offset, pfa);
 #endif
 	return pfa|offset;
 }
@@ -123,7 +123,7 @@ INLINE offs_t mmu_translate_nonseparate(struct z280_state *cpustate, offs_t addr
 	// extract page frame from the PDR
 	pfa = (offs_t)(cpustate->pdr[index] & Z280_PDR_PFA) << 8;
 #ifdef MMU_DEBUG
-	LOG("mmu_translate_nonsep pdr=%04X,index=%d,offs=%04X,pfa=%06X\n", cpustate->pdr[index], index, offset, pfa);
+	LOG("mmu_translate_nonsep index=%d,pdr=%04X,offs=%04X,pfa=%06X\n", index, cpustate->pdr[index], offset, pfa);
 #endif
 	return pfa|offset;
 }
@@ -601,13 +601,13 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 		if (phy != MMU_REMAP_ADDR_FAILED)						   \
 		{														   \
 			cpustate->_A = (cpustate)->ram->read_byte(phy);		   \
-			cpustate->_F |= CF;									   \
+			cpustate->_F &= ~CF;								   \
 		}														   \
 		else													   \
 		{														   \
-			cpustate->_F &= ~(ZF|VF|CF);						   \
+			cpustate->_F &= ~(ZF|VF);							   \
 			UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
-			cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
+			cpustate->_F |= CF | (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
 		}														   \
 	}															\
 }
@@ -619,13 +619,13 @@ INLINE UINT32 ARG16(struct z280_state *cpustate)
 		if (phy != MMU_REMAP_ADDR_FAILED)						   \
 		{														   \
 			(cpustate)->ram->write_byte(phy, cpustate->_A);		   \
-			cpustate->_F |= CF;									   \
+			cpustate->_F &= ~CF;								   \
 		}														   \
 		else													   \
 		{														   \
-			cpustate->_F &= ~(ZF|VF|CF);						   \
+			cpustate->_F &= ~(ZF|VF);							   \
 			UINT16 pdrv = cpustate->pdr[cpustate->eapdr];          \
-			cpustate->_F |= (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
+			cpustate->_F |= CF | (pdrv & Z280_PDR_V?VF:0) | (pdrv & Z280_PDR_WP?ZF:0);\
 		}														   \
 	}															\
 }
@@ -788,11 +788,11 @@ INLINE UINT8 DEC(struct z280_state *cpustate, UINT8 value)
  ***************************************************************/
 #define EXTS { \
 	cpustate->_L = cpustate->_A;		   \
-	cpustate->_H = cpustate->_A?0xff:0;		   \
+	cpustate->_H = cpustate->_A&0x80?0xff:0;		   \
 }
 
 #define EXTS_HL {  \
-	cpustate->_DE = cpustate->_H?0xffff:0;		   \
+	cpustate->_DE = cpustate->_H&0x80?0xffff:0;		   \
 }
 
 /***************************************************************

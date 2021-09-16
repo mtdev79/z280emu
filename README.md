@@ -26,7 +26,7 @@ GNU make
 ### General  
 **Z280 core - alpha version**  
 -Z280 core and instruction set  
--IM 3 and (most important) traps  
+-IM 3 and traps  
 -MMU  
 -4 channel DMA  
 -3 counter/timers (timer mode only)  
@@ -41,9 +41,9 @@ Serial ports are implemented as **byte-oriented streams over a raw TCP socket** 
 ### Boards/ROM/OS support  
 **Z280RC (stable):**  
 -original plasmo's ZZMon (v0.99 6/9/18) - OK  
--SC Monitor - TODO  
--plasmo's CP/M 2.2 image - TODO  
--plasmo's CP/M 3 image - TODO  
+-SC Monitor 1.0 - OK  
+-plasmo's CP/M 2.2 image - OK  
+-plasmo's CP/M 3 image - OK  
 -Hector Peraza's ZZMon2 - OK  
 -Hector Peraza's RSX280 image - OK  
 -UZI280 - TODO
@@ -51,13 +51,12 @@ Serial ports are implemented as **byte-oriented streams over a raw TCP socket** 
 ### TODO (unimplemented)  
 QuadSer OX16C954 serial board  
 UART bootstrap (currently only RAM/memory-mapped boot is supported)  
-finish traps (ACCV, PRIVI, singlestep, break and fatal)  
 better page/EA display in tracer  
 cleanup Z-BUS/Z80 bus modes (Z-BUS instr fetches should be WORD, ugh)  
 cleanup 8-bit/16-bit internal IO (DMA etc.)  
 cache memory (so far unimplemented on purpose, likely not needed and slows emulation down)  
 fixed memory  
-EPU  
+EPU (only trap is implemented)  
 counter inputs (needed?)  
 DMA linking, DMA UART, longword transactions  
 Emulation of Tilmann's CPU280 board  

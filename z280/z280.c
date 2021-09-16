@@ -949,28 +949,6 @@ void z280_writeio_word(struct z280_state *cpustate, offs_t port, UINT16 data)
 		{
 			LOG("Z280 '%s' DMAMCR wr $%04x\n", cpustate->device->m_tag, data);
 			cpustate->dmamcr = data&0x7f;
-			int req = -1;
-			if (((data & Z280_DMAMCR_SR0)||cpustate->rdy_state[0]) && (cpustate->dmatdr[0] & Z280_DMATDR_EN))
-			{
-				req = 0;
-			}
-			else if (((data & Z280_DMAMCR_SR1)||cpustate->rdy_state[1]) && (cpustate->dmatdr[1] & Z280_DMATDR_EN))
-			{
-				req = 1;
-			}
-			/*else if (cpustate->rdy_state[2] && (cpustate->dmatdr[2] & Z280_DMATDR_EN))
-			{
-				req = 2;
-			}
-			else if (cpustate->rdy_state[3] && (cpustate->dmatdr[3] & Z280_DMATDR_EN))
-			{
-				req = 3;
-			}*/
-			if (req != -1)
-			{
-				LOG("Z280 '%s' DMA%d service request\n", cpustate->device->m_tag, req);
-				cpustate->dma_pending[req] = 1;
-			}
 		}
 		else
 		{
@@ -1000,29 +978,6 @@ void z280_writeio_word(struct z280_state *cpustate, offs_t port, UINT16 data)
 				case Z280_DMATDR:
 					LOG("Z280 '%s' DMATDR%d wr $%04x\n", cpustate->device->m_tag, unit, data);
 					cpustate->dmatdr[unit] = data;
-					int req = -1;
-					if (((cpustate->dmamcr & Z280_DMAMCR_SR0)||cpustate->rdy_state[0]) && (cpustate->dmatdr[0] & Z280_DMATDR_EN))
-					{
-						req = 0;
-					}
-					else if (((cpustate->dmamcr & Z280_DMAMCR_SR1)||cpustate->rdy_state[1]) && (cpustate->dmatdr[1] & Z280_DMATDR_EN))
-					{
-						req = 1;
-					}
-					else if (cpustate->rdy_state[2] && (cpustate->dmatdr[2] & Z280_DMATDR_EN))
-					{
-						req = 2;
-					}
-					else if (cpustate->rdy_state[3] && (cpustate->dmatdr[3] & Z280_DMATDR_EN))
-					{
-						req = 3;
-					}
-					if (req != -1)
-					{
-						LOG("Z280 '%s' DMA%d service request\n", cpustate->device->m_tag, req);
-						cpustate->dma_pending[req] = 1;
-					}
-					check_dma_interrupt(cpustate, unit);
 					break;
 				default:
 					LOG("Z280 '%s' bogus write io reg w,%06X:$%04X\n", cpustate->device->m_tag, port, data);
@@ -1080,8 +1035,31 @@ int z280_check_dma(struct z280_state *cpustate)
 	}
 	else
 	{
+		// DMA is idle. check for requests
+		int req = -1;
+		if (((cpustate->dmamcr & Z280_DMAMCR_SR0)||cpustate->rdy_state[0]) && (cpustate->dmatdr[0] & Z280_DMATDR_EN))
+		{
+			LOG("Z280 '%s' DMA0 service request\n", cpustate->device->m_tag, req);
+			cpustate->dma_pending[0] = 1;
+		}
+		else if (((cpustate->dmamcr & Z280_DMAMCR_SR1)||cpustate->rdy_state[1]) && (cpustate->dmatdr[1] & Z280_DMATDR_EN))
+		{
+			LOG("Z280 '%s' DMA1 service request\n", cpustate->device->m_tag, req);
+			cpustate->dma_pending[1] = 1;
+		}
+		else if (cpustate->rdy_state[2] && (cpustate->dmatdr[2] & Z280_DMATDR_EN))
+		{
+			LOG("Z280 '%s' DMA2 service request\n", cpustate->device->m_tag, req);
+			cpustate->dma_pending[2] = 1;
+		}
+		else if (cpustate->rdy_state[3] && (cpustate->dmatdr[3] & Z280_DMATDR_EN))
+		{
+			LOG("Z280 '%s' DMA3 service request\n", cpustate->device->m_tag, req);
+			cpustate->dma_pending[3] = 1;
+		}
+
 		int i;
-		/* check for pending dma requests */
+		/* activate request with the highest priority */
 		for (i = 0; i < 4; i++)
 			if (cpustate->dma_pending[i])
 			{
@@ -1286,8 +1264,9 @@ int z280_take_dma(struct z280_state *cpustate)
 	}
 	LOG("Z280 '%s' DMA%d finished dar=%06X sar=%06X cnt=%04X\n", cpustate->device->m_tag, channel, cpustate->dar[channel], cpustate->sar[channel], cpustate->dmacnt[channel]);
 
-	// set TC and INT
+	// set TC and INT; reset EN
 	cpustate->dmatdr[channel] |= Z280_DMATDR_TC;
+	cpustate->dmatdr[channel] &= ~Z280_DMATDR_EN;
 	check_dma_interrupt(cpustate, channel);
 	cpustate->dma_active = -1;
 

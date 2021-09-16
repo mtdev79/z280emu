@@ -255,7 +255,7 @@ static const struct z80dasm mnemonic_ed[256]= {
 	{zLDIR,0},      {zCPIR,0},      {zINIR,0},      {zOTIR,0},
 	{zEPUM,"(iyD)"},{zMEPU,"(iyD)"},{zDB,"?"},      {zINW,"hl,(c)"},
 	{zLDDR,0},      {zCPDR,0},      {zINDR,0},      {zOTDR,0},
-	{zEPUM,"(hlD)"},{zMEPU,"(hlD)"},{zDB,"?"},      {zOUTW,"hl,(c)"},
+	{zEPUM,"(hlD)"},{zMEPU,"(hlD)"},{zDB,"?"},      {zOUTW,"(c),hl"},
 
 	{zMULT,"a,b"},  {zMULTU,"a,b"}, {zMULTW,"hl,bc"},{zMULTUW,"hl,bc"},
 	{zDIV,"hl,b"},  {zDIVU,"hl,b"}, {zADDW,"hl,bc"},{zCPW,"hl,bc"},
@@ -465,7 +465,7 @@ static const struct z80dasm mnemonic_dd_ed[256]= {
 	{zLDIR,"'"},      {zCPIR,"'"},      {zINIR,"'"},      {zOTIR,"'"},
 	{zEPUM,"'(iyD)"},{zMEPU,"'(iyD)"},{zDB,"?"},      {zINW,"'hl,(c)"},
 	{zLDDR,"'"},      {zCPDR,"'"},      {zINDR,"'"},      {zOTDR,"'"},
-	{zEPUM,"'(hlD)"},{zMEPU,"'(hlD)"},{zDB,"?"},      {zOUTW,"'hl,(c)"},
+	{zEPUM,"'(hlD)"},{zMEPU,"'(hlD)"},{zDB,"?"},      {zOUTW,"'(c),hl"},
 
 	{zMULT,"a,(spD)"},  {zMULTU,"a,(spD)"}, {zMULTW,"hl,(hl)"},{zMULTUW,"hl,(hl)"},
 	{zDIV,"hl,(spD)"},  {zDIVU,"hl,(spD)"}, {zADDW,"hl,(hl)"},{zCPW,"hl,(hl)"},
@@ -535,7 +535,7 @@ static const struct z80dasm mnemonic_fd_ed[256]= {
 	{zLDIR,"'"},      {zCPIR,"'"},      {zINIR,"'"},      {zOTIR,"'"},
 	{zEPUM,"'(iyD)"},{zMEPU,"'(iyD)"},{zDB,"?"},      {zINW,"'hl,(c)"},
 	{zLDDR,"'"},      {zCPDR,"'"},      {zINDR,"'"},      {zOTDR,"'"},
-	{zEPUM,"'(hlD)"},{zMEPU,"'(hlD)"},{zDB,"?"},      {zOUTW,"'hl,(c)"},
+	{zEPUM,"'(hlD)"},{zMEPU,"'(hlD)"},{zDB,"?"},      {zOUTW,"'(c),hl"},
 
 	{zMULT,"a,(Q)"},  {zMULTU,"a,(Q)"}, {zMULTW,"hl,(ixD)"},{zMULTUW,"hl,(ixD)"},
 	{zDIV,"hl,(Q)"},  {zDIVU,"hl,(Q)"}, {zADDW,"hl,(ixD)"},{zCPW,"hl,(ixD)"},
