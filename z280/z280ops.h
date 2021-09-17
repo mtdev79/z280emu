@@ -304,14 +304,15 @@ INLINE void WM(struct z280_state *cpustate, offs_t addr, UINT8 value)
 INLINE void RM16( struct z280_state *cpustate, offs_t addr, union PAIR *r )
 {
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,0,0);
-	if (cpustate->device->m_bus16)
+	if (cpustate->device->m_bus16 && !(addr & 1))
 	{
 		r->w.l = cpustate->ram->read_word(phy);
 	}
 	else
 	{
+		offs_t phy1 = MMU_REMAP_ADDR(cpustate,addr+1,0,0); // p.13-6, enforce ACCV on page boundary
 		r->b.l = cpustate->ram->read_byte(phy);
-		r->b.h = cpustate->ram->read_byte(phy+1);
+		r->b.h = cpustate->ram->read_byte(phy1);
 	}
 }
 
@@ -321,14 +322,15 @@ INLINE void RM16( struct z280_state *cpustate, offs_t addr, union PAIR *r )
 INLINE void WM16( struct z280_state *cpustate, offs_t addr, union PAIR *r )
 {
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,0,1);
-	if (cpustate->device->m_bus16)
+	if (cpustate->device->m_bus16 && !(addr & 1))
 	{
 		cpustate->ram->write_word(phy,r->w.l);
 	}
 	else
 	{
+		offs_t phy1 = MMU_REMAP_ADDR(cpustate,addr+1,0,1); // enforce ACCV on page boundary
 		cpustate->ram->write_byte(phy,r->b.l);
-		cpustate->ram->write_byte(phy+1,r->b.h);
+		cpustate->ram->write_byte(phy1,r->b.h);
 	}
 }
 
@@ -378,17 +380,18 @@ INLINE UINT8 ARG(struct z280_state *cpustate)
 
 INLINE UINT32 ARG16(struct z280_state *cpustate)
 {
-	// TODO unaligned fetch if bus16
+	// TODO word fetch if bus16
 	offs_t addr = cpustate->_PCD;
 	offs_t phy = MMU_REMAP_ADDR(cpustate,addr,1,0);
 	cpustate->_PC += 2;
-	if (cpustate->device->m_bus16)
+	if (cpustate->device->m_bus16 && !(addr & 1))
 	{
 		return cpustate->ram->read_raw_word(phy);
 	}
 	else
 	{
-		return (UINT32)cpustate->ram->read_raw_byte(phy)|((UINT32)cpustate->ram->read_raw_byte(phy)<<8);
+		offs_t phy1 = MMU_REMAP_ADDR(cpustate,addr+1,1,0);
+		return cpustate->ram->read_raw_byte(phy)|((UINT32)cpustate->ram->read_raw_byte(phy1)<<8);
 	}
 }
 
