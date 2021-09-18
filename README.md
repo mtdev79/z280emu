@@ -2,7 +2,7 @@
 A portable full system emulator of Z280 based boards
 
 ## Motivation
-There is no working Z280 emulator that I'm aware of so I decided to write one.  
+There was no working Z280 emulator that I was aware of so I decided to write one.  
 
 ## Build status
 **build passing**
@@ -24,7 +24,7 @@ GNU make
 
 ## Features
 ### General  
-**Z280 core - alpha version**  
+**Z280 core - beta version**  
 -Z280 core and instruction set  
 -IM 3 and traps  
 -MMU  
@@ -46,7 +46,7 @@ Serial ports are implemented as **byte-oriented streams over a raw TCP socket** 
 -plasmo's CP/M 3 image - OK  
 -Hector Peraza's ZZMon2 - OK  
 -Hector Peraza's RSX280 image - OK  
--UZI280 - TODO
+-UZI280 - OK
 
 ### TODO (unimplemented)  
 QuadSer OX16C954 serial board  

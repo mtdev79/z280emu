@@ -10,7 +10,7 @@ OP(illegal,1) {
  * IX register related opcodes (DD prefix)
  **********************************************************/
 OP(dd,00) { illegal_1(cpustate); op_00(cpustate);                                   } /* DB   DD          */
-OP(dd,01) { WM(cpustate,  cpustate->_HL, ARG16(cpustate) );            } /* LD   (HL),w      */
+OP(dd,01) { union PAIR tmp; tmp.w.l = ARG16(cpustate); WM16(cpustate, cpustate->_HL, &tmp); } /* LD   (HL),w      */
 OP(dd,02) { illegal_1(cpustate); op_02(cpustate);                                   } /* DB   DD          */
 OP(dd,03) { union PAIR tmp; RM16(cpustate, cpustate->_HL, &tmp); tmp.w.l++; WM16(cpustate, cpustate->_HL, &tmp); } /* INCW (HL)        */
 OP(dd,04) { EASP16(cpustate); WM(cpustate, cpustate->ea, INC(cpustate, RM(cpustate, cpustate->ea)) ); } /* INC (SP+w)       */
