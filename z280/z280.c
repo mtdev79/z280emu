@@ -1039,22 +1039,22 @@ int z280_check_dma(struct z280_state *cpustate)
 		int req = -1;
 		if (((cpustate->dmamcr & Z280_DMAMCR_SR0)||cpustate->rdy_state[0]) && (cpustate->dmatdr[0] & Z280_DMATDR_EN))
 		{
-			LOG("Z280 '%s' DMA0 service request\n", cpustate->device->m_tag, req);
+			LOG("Z280 '%s' DMA0 service request\n", cpustate->device->m_tag);
 			cpustate->dma_pending[0] = 1;
 		}
 		else if (((cpustate->dmamcr & Z280_DMAMCR_SR1)||cpustate->rdy_state[1]) && (cpustate->dmatdr[1] & Z280_DMATDR_EN))
 		{
-			LOG("Z280 '%s' DMA1 service request\n", cpustate->device->m_tag, req);
+			LOG("Z280 '%s' DMA1 service request\n", cpustate->device->m_tag);
 			cpustate->dma_pending[1] = 1;
 		}
 		else if (cpustate->rdy_state[2] && (cpustate->dmatdr[2] & Z280_DMATDR_EN))
 		{
-			LOG("Z280 '%s' DMA2 service request\n", cpustate->device->m_tag, req);
+			LOG("Z280 '%s' DMA2 service request\n", cpustate->device->m_tag);
 			cpustate->dma_pending[2] = 1;
 		}
 		else if (cpustate->rdy_state[3] && (cpustate->dmatdr[3] & Z280_DMATDR_EN))
 		{
-			LOG("Z280 '%s' DMA3 service request\n", cpustate->device->m_tag, req);
+			LOG("Z280 '%s' DMA3 service request\n", cpustate->device->m_tag);
 			cpustate->dma_pending[3] = 1;
 		}
 
