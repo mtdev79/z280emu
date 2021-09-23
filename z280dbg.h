@@ -20,7 +20,7 @@
  *
  */
 
-unsigned int g_quit = 0;
+unsigned int volatile g_quit = 0;
 unsigned long long instrcnt = 0;
 unsigned long long starttrace = -1LL;
 
