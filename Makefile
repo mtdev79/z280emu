@@ -4,7 +4,7 @@ endif
 
 CCOPTS += -O3 -DSOCKETCONSOLE -std=gnu89 -fcommon
 
-all: z280rc makedisk
+all: z280rc makedisk dis280
 
 z280rc: ide.o z280.o z280dasm.o z80daisy.o z280uart.o z280rc.o rtc_z280rc.o ds1202_1302.o
 	$(CC) $(CCOPTS) -s -o z280rc $^ $(SOCKLIB)
@@ -41,3 +41,9 @@ makedisk: makedisk.o ide.o
 
 makedisk.o: ide/makedisk.c
 	cd ide ; $(CC) $(CCOPTS) -o ../makedisk.o -c makedisk.c
+
+dis280:	dis280.o z280dasm.o
+	$(CC) $(CCOPTS) -s -o dis280 $^
+
+dis280.o: dis280.c
+	$(CC) $(CCOPTS) -c dis280.c
