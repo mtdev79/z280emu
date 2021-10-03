@@ -32,8 +32,8 @@ uint8_t _ram[131072];
 int main(int argc, char** argv)
 {
    FILE* f;
-   size_t len, j;
-   offs_t i;
+   size_t len, ilen;
+   offs_t addr, i;
    char buf[80];
 
    printf(";dis280 v1.0\n");
@@ -47,9 +47,12 @@ int main(int argc, char** argv)
       printf(";%s: %d bytes\n",argv[1],len);
       fclose(f);
    }
-   for (i=0; i<len; ) {
-      j = cpu_disassemble_z280(NULL, buf, i, &_ram[i], 0)&DASMFLAG_LENGTHMASK;
-      printf("%04x:\t%s\n",i,buf);
-      i += j;
+   for (addr=0; addr<len; ) {
+      ilen = cpu_disassemble_z280(NULL, buf, addr, &_ram[addr], 0)&DASMFLAG_LENGTHMASK;
+      printf("%04x:\t",addr);
+      for (i=0;i<ilen;i++) printf("%02X",_ram[addr+i]);
+      for ( ;i<7;i++) {putchar(' ');putchar(' ');}
+      printf("%s\n",buf);
+      addr += ilen;
    }
 }
