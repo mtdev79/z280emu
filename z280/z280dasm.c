@@ -625,12 +625,12 @@ static const struct z80dasm mnemonic_main[256]= {
 	{zCALL,"m,A"},  {zDB,"fd"},     {zCP,"B"},      {zRST,"V"}
 };
 
-static char sign(INT8 offset)
+static char sign(int16_t offset)
 {
 	return (offset < 0)? '-':'+';
 }
 
-static int offs(INT8 offset)
+static int offs(int16_t offset)
 {
 	if (offset < 0) return -offset;
 	return offset;
@@ -645,7 +645,7 @@ offs_t cpu_disassemble_z280(device_t *device, char *buffer, offs_t pc, const UIN
 	const char *src, *ixy;
 	char *dst;
 	unsigned PC = pc;
-	INT8 offset = 0;
+	int16_t offset = 0;
 	UINT8 op, op1 = 0;
 	UINT16 ea = 0;
 	int pos = 0;
