@@ -1,5 +1,3 @@
-OP(illegal,2);
-
 /**********************************************************
  * opcodes with CB prefix
  * rotate, shift and bit operations
