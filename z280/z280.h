@@ -102,10 +102,6 @@ enum
 #define Z280_INT_MAX    Z280_INT_DMA3
 
 
-#define Z280_IRQ0       0           /* Execute IRQ0 */
-#define Z280_IRQ1       1           /* Execute IRQ1 */
-#define Z280_IRQ2       2           /* Execute IRQ2 */
-
 /* Control registers p.5-77 */
 #define Z280_CRSIZE  0x18
 #define Z280_MSR   0     // Master Status reg (word) p.3-4

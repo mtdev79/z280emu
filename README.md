@@ -36,6 +36,7 @@ GNU make
 **DS1202/1302 RTC with NVRAM file storage**  
 **Z280 dissasembler and simple yet powerful tracer**  
 Serial ports are implemented as **byte-oriented streams over a raw TCP socket** (works with Putty, nc, ckermit etc.)  
+**QuadSer OX16C954 serial board (so far except fifo trigger levels, flow control, 9bit mode, and some other advanced features)
 **Modular structure** allowing adding new boards and peripherals with reasonable effort  
 
 ### Boards/ROM/OS support  
@@ -49,7 +50,6 @@ Serial ports are implemented as **byte-oriented streams over a raw TCP socket** 
 -UZI280 - OK
 
 ### TODO (unimplemented)  
-QuadSer OX16C954 serial board  
 UART bootstrap (currently only RAM/memory-mapped boot is supported)  
 better page/EA display in tracer  
 cleanup Z-BUS/Z80 bus modes (Z-BUS instr fetches should be WORD, ugh)  
@@ -143,16 +143,31 @@ waits until the socket is connected, and then starts execution.
 ---
 Run with trace:  
 ```
-z280rc d >mytrace.log
+z280rc -d >mytrace.log
 ```
 Then grep for it.
 
 
 Run with trace from 10000000-th instruction:  
 ```
-z280rc d 10000000 >mytrace.log
+z280rc -d=10000000 >mytrace.log
 ```
 The above can be used to bisect into the routine you're debugging.  
+
+---
+Enabling the QuadSer card:  
+```
+z280rc -quadser	  # enable port0 only
+
+z280emu v1.0 Z280RC
+Serial port 0 listening on 10280 # UART
+Serial port 1 listening on 10281 # QuadSer port 1
+
+z280rc -quadser=1 # same as previous
+z280rc -quadser=2 # enable port1,2
+z280rc -quadser=4 # enable all 4 ports
+```
+Note that all sockets need to be connected for the emulation to start.
 
 ---
 Exiting the emulator  

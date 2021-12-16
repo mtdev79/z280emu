@@ -1663,9 +1663,9 @@ int check_interrupts(struct z280_state *cpustate)
 	int cycles = 0;
 
 	/* scan external interrupts */
-	cpustate->int_pending[Z280_INT_IRQ0] = cpustate->irq_state[Z280_IRQ0];
-	cpustate->int_pending[Z280_INT_IRQ1] = cpustate->irq_state[Z280_IRQ1];
-	cpustate->int_pending[Z280_INT_IRQ2] = cpustate->irq_state[Z280_IRQ2];
+	cpustate->int_pending[Z280_INT_IRQ0] = cpustate->irq_state[INPUT_LINE_IRQ0];
+	cpustate->int_pending[Z280_INT_IRQ1] = cpustate->irq_state[INPUT_LINE_IRQ1];
+	cpustate->int_pending[Z280_INT_IRQ2] = cpustate->irq_state[INPUT_LINE_IRQ2];
 
 	/* check for NMI */
 	if (cpustate->int_pending[Z280_INT_NMI])

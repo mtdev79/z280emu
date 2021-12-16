@@ -28,8 +28,9 @@
 
 #ifdef SOCKETCONSOLE
 #define BASE_PORT 10280
-#define MAX_SOCKET_PORTS 2
-int enable_aux = 0;
+#define MAX_SOCKET_PORTS 5
+#define XTALCLK 29491200
+int enable_quadser = 0;
 #include "sconsole.h"
 #endif
 
@@ -59,7 +60,7 @@ int enable_aux = 0;
 #include "z280/z280.h"
 #include "ide/ide.h"
 #include "ds1202_1302/ds1202_1302.h"
-//#include "ins8250/ins8250.h" // TODO
+#include "ins8250/ins8250.h"
 
 UINT8 _ram[2*1048576];
 
@@ -74,8 +75,9 @@ struct ide_drive *id00;
 uint8_t idemap[16] = {ide_data,0,ide_error_r,0,0,ide_sec_count,0,ide_sec_num,/*ide_altst_r*/
 				0,ide_cyl_low,0,ide_cyl_hi,0,ide_dev_head,0,ide_status_r};
 
-//#define INS8250_DIVISOR 35
-//unsigned int ins8250_clock = INS8250_DIVISOR;
+#define INS8250_DIVISOR 4 /* ~16 clocks */
+unsigned int ins8250_clock = INS8250_DIVISOR;
+struct pc16554_device *quadser;
 
 rtc_ds1202_1302_t *rtc;
 
@@ -134,38 +136,34 @@ int irq0ackcallback(device_t *device,int irqnum) {
 	return 0;
 }
 
-int aux_char_available() {
+int quadser_char_available(int channel) {
 #ifdef SOCKETCONSOLE
-	  return char_available_socket_port(1);
+	  return char_available_socket_port(channel+1);
 #else
 	return 0;
 #endif
 }
 
-void aux_tx(device_t *device, int channel, UINT8 Value) {
-	if (channel==0) {
+void quadser_tx(device_t *device, int channel, UINT8 Value) {
 #ifdef SOCKETCONSOLE
-	  tx_socket_port(1, Value);
+	  tx_socket_port(channel+1, Value);
 #endif
-	}
 }
 
-int aux_rx(device_t *device, int channel) {
+int quadser_rx(device_t *device, int channel) {
 	int ioData;
-	if (channel==0) {
-	  if(aux_char_available()) {
+	  if(quadser_char_available(channel)) {
 #ifdef SOCKETCONSOLE
-	    ioData = rx_socket_port(1);
+	    ioData = rx_socket_port(channel+1);
 #endif
 		return ioData;
 	  }
-	}
 	return -1;
 }
 
-void aux_int_state_cb(device_t *device, int state) {
-	if (VERBOSE) printf("SER1 int: %d\n",state);
-	z280_set_irq_line(cpu,2,state);
+void quadser_int_state_cb(device_t *device, int state) {
+	/*if (VERBOSE) printf("QUADSER int: %d\n",state);*/
+	z280_set_irq_line(cpu,1,state); /* INTB line */
 }
 
 UINT8 io_read_byte (offs_t Port) {
@@ -180,6 +178,11 @@ UINT8 io_read_byte (offs_t Port) {
 	{
 		ioData=ds1202_1302_read_data_line(rtc)<<7;
 		if (VERBOSE) printf("RTC read: %02x\n",ioData);
+	}
+	else if (enable_quadser && lPort >= 0xd0 && lPort <= 0xef) // Quadser
+	{
+		ioData=pc16554_device_r(quadser,lPort-0xd0);
+		/*printf("IO: Quadser read b,%x %02x\n",Port,ioData);*/
 	}
 	else
 	{
@@ -205,6 +208,11 @@ void io_write_byte (offs_t Port,UINT8 Value) {
 		// b7=IO,b1=/RST,b0=CLK
 		if (VERBOSE) printf("RTC write: %02x\n",Value);
 		ds1202_1302_set_lines(rtc,(Value&2)>>1,Value&1,Value>>7);
+	}
+	else if (enable_quadser && lPort >= 0xd0 && lPort <= 0xef) // Quadser
+	{
+		/*printf("IO: Quadser write b,%x %02x\n",Port,Value);*/
+		pc16554_device_w(quadser,lPort-0xd0,Value);
 	}
 	else
 	{
@@ -259,17 +267,26 @@ void io_write_word (offs_t Port,UINT16 Value) {
 
 UINT8 init_bti(device_t *device) {
     // DIC: 0
-	// BS: 0 CF, 1=UART
+	// BS: 0 CF, 1=UART // the board has a jumper for UART bootstrap. TODO
 	// LM: 0 =no wait
 	// CS: 0 =1/2 clock
 	return 0;
 }
 
 void do_timers() {
-	/*if (!--ins8250_clock) {
-		ins8250_device_timer(fdc37c665->serial1);
+	if (!--ins8250_clock) {
+		ins8250_device_timer(quadser->m_chan0);
+		if (enable_quadser > 1)
+		{
+			ins8250_device_timer(quadser->m_chan1);
+			if (enable_quadser == 4)
+			{
+				ins8250_device_timer(quadser->m_chan2);
+				ins8250_device_timer(quadser->m_chan3);
+			}
+		}
 		ins8250_clock = INS8250_DIVISOR;
-	}*/
+	}
 }
 
 void boot1dma () {
@@ -290,7 +307,17 @@ void io_device_update() {
 #ifdef SOCKETCONSOLE
     // check socket open and optionally reopen it
     if (!is_connected_socket_port(0)) open_socket_port(0);
-	if (enable_aux && !is_connected_socket_port(1)) open_socket_port(1);
+	if (enable_quadser) {
+		if (!is_connected_socket_port(1)) open_socket_port(1);
+		if (enable_quadser > 1)
+		{
+			if (!is_connected_socket_port(2)) open_socket_port(2);
+			if (enable_quadser == 4) {
+				if (!is_connected_socket_port(3)) open_socket_port(3);
+				if (!is_connected_socket_port(4)) open_socket_port(4);
+			}
+		}
+	}
 #endif
 }
 
@@ -353,18 +380,53 @@ int main(int argc, char** argv)
 	// on MINGW, keep CTRL+Break (and window close button) enabled
 	// MINGW always calls atexit in these cases
 
+	// parse arguments
+	int i;
+	for (i = 0; i < argc; i++)
+	{
+		if (argv[i][0]=='-')
+		{
+			if (argv[i][1]=='d')
+			{
+				starttrace = 0;
+				if (argv[i][2]=='=')
+				{
+					starttrace = atoll(&argv[i][3]);
+				}
+				VERBOSE = starttrace==0?1:0;
+			} 
+			else if (strncmp(argv[i],"-quadser",8)==0)
+			{
+				enable_quadser = 1;
+				if (argv[i][8]=='=')
+				{
+					if (argv[i][9]=='2')
+						enable_quadser = 2;
+					else if (argv[i][9]=='4')
+						enable_quadser = 4;
+				}
+			}
+		}
+	}
+
 #ifdef SOCKETCONSOLE
 	init_TCPIP();
 	init_socket_port(0); // UART Console
-	if (enable_aux)
-	    init_socket_port(1); // AUX
+	if (enable_quadser)
+	{
+	    init_socket_port(1);
+	    if (enable_quadser > 1)
+		{
+			init_socket_port(2);
+			if (enable_quadser == 4) {
+				init_socket_port(3);
+				init_socket_port(4);
+			}
+		}
+	}
 	atexit(shutdown_socket_ports);
 #endif
 	io_device_update(); // wait for serial socket connections
-
-	if (argc==2 && !strcmp(argv[1],"d")) starttrace = 0;
-	else if (argc==3 && !strcmp(argv[1],"d")) starttrace = atoll(argv[2]);
-	VERBOSE = starttrace==0?1:0;
 
 #ifdef _WIN32
 	setmode(fileno(stdout), O_BINARY);
@@ -377,11 +439,16 @@ int main(int argc, char** argv)
 	ds1202_1302_reset(rtc);
 	atexit(destroy_rtc);
 
-	cpu = cpu_create_z280("Z280",Z280_TYPE_Z280,29491200/2,&ram,&iospace,irq0ackcallback,NULL/*daisychain*/,
-		init_bti,1/*Z-BUS*/,0,29491200/8,0,uart_rx,uart_tx);
-	//printf("1\n");fflush(stdout);
+	/* cpu is @XTALCLK/2 (14.7456)
+	   bus is cpu/2      ( 7.3728)
+	   ctin1 is bus/4    ( 1.8432) */
+	cpu = cpu_create_z280("Z280",Z280_TYPE_Z280,XTALCLK/2,&ram,&iospace,irq0ackcallback,NULL/*daisychain*/,
+		init_bti,1/*Z-BUS*/,0,XTALCLK/16,0,uart_rx,uart_tx);
 	cpu_reset_z280(cpu);
-	//printf("2\n");fflush(stdout);
+
+	quadser = pc16554_device_create("QUADSER", cpu, cpu->m_clock/2, OX16950,
+		quadser_int_state_cb,
+		quadser_rx,quadser_tx,0/*CLKSEL=GND*/);
 
 	// DMA2,3 /RDY are tied to GND
 	z280_set_rdy_line(cpu, 2, ASSERT_LINE);
@@ -396,7 +463,6 @@ int main(int argc, char** argv)
 	while(!g_quit) {
 		if(instrcnt>=starttrace) VERBOSE=1;
 		cpu_execute_z280(cpu,10000);
-		//printf("3\n");fflush(stdout);
 		io_device_update();
 		/*if (!(--runtime))
 			g_quit=1;*/

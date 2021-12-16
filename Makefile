@@ -6,7 +6,7 @@ CCOPTS += -O3 -DSOCKETCONSOLE -std=gnu89 -fcommon
 
 all: z280rc makedisk dis280
 
-z280rc: ide.o z280.o z280dasm.o z80daisy.o z280uart.o z280rc.o rtc_z280rc.o ds1202_1302.o
+z280rc: ide.o z280.o z280dasm.o z80daisy.o z280uart.o z280rc.o rtc_z280rc.o ds1202_1302.o ins8250.o
 	$(CC) $(CCOPTS) -s -o z280rc $^ $(SOCKLIB)
 
 z280rc.o: z280rc.c sconsole.h z280dbg.h z280/z280.h z280/z80daisy.h z280/z80common.h ds1202_1302/ds1202_1302.h
@@ -33,8 +33,8 @@ z280uart.o: z280/z280uart.c z280/z280uart.h z280/z280.h z280/z80common.h
 ds1202_1302.o: ds1202_1302/ds1202_1302.c ds1202_1302/ds1202_1302.h ds1202_1302/rtc.h
 	cd ds1202_1302 ; $(CC) $(CCOPTS) -o ../ds1202_1302.o -c ds1202_1302.c 
 
-#ins8250.o: ins8250/ins8250.c ins8250/ins8250.h
-#	cd ins8250 ; $(CC) $(CCOPTS) -o ../ins8250.o -c ins8250.c
+ins8250.o: ins8250/ins8250.c ins8250/ins8250.h
+	cd ins8250 ; $(CC) $(CCOPTS) -o ../ins8250.o -c ins8250.c
 
 makedisk: makedisk.o ide.o
 	$(CC) $(CCOPTS) -s -o makedisk $^

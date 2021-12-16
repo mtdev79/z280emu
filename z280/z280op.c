@@ -309,9 +309,9 @@ UINT32 get_irq_vector(struct z280_state *cpustate, int irq)
 	else
 	{
 		if (cpustate->device->m_bus16)
-			irqline = irq>>2; /* Z280_IRQ0,IRQ1,IRQ2 */
+			irqline = irq>>2; /* INPUT_LINE_IRQ0,IRQ1,IRQ2 */
 		else /* Z80 compat p.6-3 */
-			irqline = Z280_IRQ0;
+			irqline = INPUT_LINE_IRQ0;
 		if (cpustate->irq_callback != NULL)
 			irq_vector = (*cpustate->irq_callback)(cpustate->device, irqline);
 	}
