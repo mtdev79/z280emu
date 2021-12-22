@@ -134,6 +134,7 @@ struct ins8250_device *ins8250_device_create(char *tag, device_t *owner, uint32_
 	d->m_clock = clock;
 	d->m_tag = tag;
 	d->m_owner = owner;
+	d->m_channel = 0;
 
 	d->tx_callback = tx_callback;
 	d->rx_callback = rx_callback;
@@ -178,12 +179,15 @@ struct pc16552_device* pc16552_device_create(char *tag, device_t *owner, uint32_
 	struct pc16552_device *d = malloc(sizeof(struct pc16552_device));
 	memset(d,0,sizeof(struct pc16552_device));
 	int l = strlen(tag);
-	char *t = malloc(l+3);
-	strcpy(t,tag);strcat(t,".0");
-	d->m_chan0 = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
-	t = malloc(l+3);
-	strcpy(t,tag);strcat(t,".1");
-	d->m_chan1 = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
+	int i;
+	char *t;
+	for (i=0;i<2;i++)
+	{
+		char *t = malloc(l+3);
+		sprintf(t,"%s.%d",tag,i);
+		d->channel[i] = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
+		d->channel[i]->m_channel = i;
+	}
 	return d;
 }
 
@@ -194,18 +198,15 @@ struct pc16554_device* pc16554_device_create(char *tag, device_t *owner, uint32_
 	struct pc16554_device *d = malloc(sizeof(struct pc16554_device));
 	memset(d,0,sizeof(struct pc16554_device));
 	int l = strlen(tag);
-	char *t = malloc(l+3);
-	strcpy(t,tag);strcat(t,".0");
-	d->m_chan0 = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
-	t = malloc(l+3);
-	strcpy(t,tag);strcat(t,".1");
-	d->m_chan1 = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
-	t = malloc(l+3);
-	strcpy(t,tag);strcat(t,".2");
-	d->m_chan2 = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
-	t = malloc(l+3);
-	strcpy(t,tag);strcat(t,".3");
-	d->m_chan3 = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
+	int i;
+	char *t;
+	for (i=0;i<4;i++)
+	{
+		char *t = malloc(l+3);
+		sprintf(t,"%s.%d",tag,i);
+		d->channel[i] = ins8250_device_create(t, d, clock, device_type, out_int_cb, rx_callback, tx_callback, clksel);
+		d->channel[i]->m_channel = i;
+	}
 	return d;
 }
 
@@ -809,7 +810,7 @@ void ins8250_device_tra_complete(struct ins8250_device *d) /* generic function f
 {
 	LOG("8250 [%s] tra_complete\n",d->m_tag);
 	if (d->tx_callback)
-		d->tx_callback(d,0,d->tx_data);
+		d->tx_callback(d,d->m_channel,d->tx_data);
 	
 	ins8250_device_tra_load(d);
 }
@@ -872,7 +873,7 @@ void ins8250_device_rcv_callback(struct ins8250_device *d)
 		}
 	} else {
 		if (d->rx_callback)
-			c = d->rx_callback(d,0);
+			c = d->rx_callback(d,d->m_channel);
 		if (c!=-1) {
 			d->rx_data = c;
 			d->rx_bits_rem = d->m_bit_count;
@@ -1061,16 +1062,20 @@ void ins8250_device_reset(struct ins8250_device *d) /* generic function for all 
 
 void pc16552_device_reset(struct pc16552_device *d)
 {
-	ins8250_device_reset(d->m_chan0);
-	ins8250_device_reset(d->m_chan1);
+	int i;
+	for (i=0;i<2;i++)
+	{
+		ins8250_device_reset(d->channel[i]);
+	}
 }
 
 void pc16554_device_reset(struct pc16554_device *d)
 {
-	ins8250_device_reset(d->m_chan0);
-	ins8250_device_reset(d->m_chan1);
-	ins8250_device_reset(d->m_chan2);
-	ins8250_device_reset(d->m_chan3);
+	int i;
+	for (i=0;i<4;i++)
+	{
+		ins8250_device_reset(d->channel[i]);
+	}
 }
 
 void ins8250_device_timer(struct ins8250_device *d /*, emu_timer *timer, device_timer_id id, int param, void *ptr*/)
@@ -1176,40 +1181,20 @@ void ns16550_device_set_timer(struct ins8250_device *d)
 
 uint8_t pc16552_device_r(struct pc16552_device *d, offs_t offset)
 {
-	return ins8250_device_r((offset & 8) ? d->m_chan1 : d->m_chan0, offset & 7);
+	return ins8250_device_r(d->channel[(offset>>3)&1], offset & 7);
 }
 
 void pc16552_device_w( struct pc16552_device *d, offs_t offset, uint8_t data )
 {
-	ins8250_device_w((offset & 8) ? d->m_chan1 : d->m_chan0, offset & 7, data);
+	ins8250_device_w(d->channel[(offset>>3)&1], offset & 7, data);
 }
 
 uint8_t pc16554_device_r(struct pc16554_device *d, offs_t offset)
 {
-	switch(offset & 24)
-	{
-		case 0<<3:
-			return ins8250_device_r(d->m_chan0, offset & 7);
-		case 1<<3:
-			return ins8250_device_r(d->m_chan1, offset & 7);
-		case 2<<3:
-			return ins8250_device_r(d->m_chan2, offset & 7);
-		case 3<<3:
-			return ins8250_device_r(d->m_chan3, offset & 7);
-	}
+	return ins8250_device_r(d->channel[(offset>>3)&3], offset & 7);
 }
 
 void pc16554_device_w( struct pc16554_device *d, offs_t offset, uint8_t data )
 {
-	switch(offset & 24)
-	{
-		case 0<<3:
-			return ins8250_device_w(d->m_chan0, offset & 7, data);
-		case 1<<3:
-			return ins8250_device_w(d->m_chan1, offset & 7, data);
-		case 2<<3:
-			return ins8250_device_w(d->m_chan2, offset & 7, data);
-		case 3<<3:
-			return ins8250_device_w(d->m_chan3, offset & 7, data);
-	}
+	ins8250_device_w(d->channel[(offset>>3)&3], offset & 7, data);
 }

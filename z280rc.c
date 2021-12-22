@@ -275,14 +275,14 @@ UINT8 init_bti(device_t *device) {
 
 void do_timers() {
 	if (!--ins8250_clock) {
-		ins8250_device_timer(quadser->m_chan0);
+		ins8250_device_timer(quadser->channel[0]);
 		if (enable_quadser > 1)
 		{
-			ins8250_device_timer(quadser->m_chan1);
+			ins8250_device_timer(quadser->channel[1]);
 			if (enable_quadser == 4)
 			{
-				ins8250_device_timer(quadser->m_chan2);
-				ins8250_device_timer(quadser->m_chan3);
+				ins8250_device_timer(quadser->channel[2]);
+				ins8250_device_timer(quadser->channel[3]);
 			}
 		}
 		ins8250_clock = INS8250_DIVISOR;

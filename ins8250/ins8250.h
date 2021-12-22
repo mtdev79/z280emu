@@ -112,7 +112,8 @@ typedef int (*rx_callback_t)(device_t *device, int channel);
 	char *m_tag;
 	uint32_t m_type;
 	uint32_t m_clock;
-	void *m_owner; 
+	void *m_owner;
+	int m_channel; /* channel no. if this is a part of a dual/quad device */
 
 	struct {
 		uint8_t thr;  /* 0 -W transmitter holding register */
@@ -225,15 +226,11 @@ protected:
 private:
 */
 struct pc16552_device {
-	struct ins8250_device *m_chan0;
-	struct ins8250_device *m_chan1;
+	struct ins8250_device *channel[2];
 };
 
 struct pc16554_device {
-	struct ins8250_device *m_chan0;
-	struct ins8250_device *m_chan1;
-	struct ins8250_device *m_chan2;
-	struct ins8250_device *m_chan3;
+	struct ins8250_device *channel[4];
 };
 
 struct ins8250_device* ins8250_device_create(char *tag, device_t *owner, uint32_t clock, enum ins8250_dev_type device_type,

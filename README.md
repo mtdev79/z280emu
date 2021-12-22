@@ -36,7 +36,7 @@ GNU make
 **DS1202/1302 RTC with NVRAM file storage**  
 **Z280 dissasembler and simple yet powerful tracer**  
 Serial ports are implemented as **byte-oriented streams over a raw TCP socket** (works with Putty, nc, ckermit etc.)  
-**QuadSer OX16C954 serial board (so far except fifo trigger levels, flow control, 9bit mode, and some other advanced features)
+**QuadSer OX16C954 serial board** (so far except fifo trigger levels, flow control, 9bit mode, and some other advanced features)  
 **Modular structure** allowing adding new boards and peripherals with reasonable effort  
 
 ### Boards/ROM/OS support  
