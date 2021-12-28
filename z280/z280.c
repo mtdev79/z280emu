@@ -1540,21 +1540,68 @@ void cpu_reset_z280(device_t *device)
 	cpustate->cr[Z280_CCR] = 0x80;
 }
 
+#define timer_linking (cpustate->ctcr[0] & Z280_CTCR_CTC)
+
 /* Reload CT timer */
 void z280_reload_timer(struct z280_state *cpustate, int unit)
 {
-	int linking = cpustate->ctcsr[0] & Z280_CTCR_CTC;
-	if (unit != 0 || !linking) // CT1,2 always reload, CT0 only if not linked
+	if (unit != 0 || !timer_linking) // CT1,2 always reload, CT0 only if not linked
 	{
 		cpustate->ctctr[unit] = cpustate->cttcr[unit];
 		LOG("%s CT%d reloaded $%04X\n", cpustate->device->m_tag, unit, cpustate->cttcr[unit]);
 	}
-	if (unit == 1 && linking)
+	if (unit == 1 && timer_linking)
 	{
 		cpustate->ctctr[0] = cpustate->cttcr[0]; // reload low word in CT0 also
 		LOG("%s CT1:CT0 reloaded $%04X:%04X\n", cpustate->device->m_tag, cpustate->cttcr[1],cpustate->cttcr[0]);
 	}
 }
+
+/* Terminal count
+   execute actions when a timer counts to 0
+*/
+void terminal_count(struct z280_state *cpustate, int unit)
+{
+	LOG("%s CT%d counted to 0\n", cpustate->device->m_tag, unit);
+	if (cpustate->ctcsr[unit] & Z280_CTCSR_CC)
+	{
+		cpustate->ctcsr[unit] |= Z280_CTCSR_COR;
+	}
+	else
+	{
+		cpustate->ctcsr[unit] |= Z280_CTCSR_CC;
+	}
+
+	if (unit == 0 && timer_linking)
+	{
+		cpustate->ctctr[1]--; // decrement high word in CT1
+	}
+
+	// clock UART from CT1
+	if (unit == 1 && (cpustate->device->z280uart->m_uartcr & 0x8) /*UARTCR_CS*/)
+	{
+		z280uart_device_timer(cpustate->device->z280uart);
+	}
+
+	if(cpustate->ctcr[unit] & Z280_CTCR_IE)
+	{
+		int irq;
+		switch (unit) {
+			case 0:
+				irq = Z280_INT_CTR0;
+				break;
+			case 1:
+				irq = Z280_INT_CTR1;
+				break;
+			case 2:
+				irq = Z280_INT_CTR2;
+				break;
+		}
+		LOG("%s CT%d assert interrupt\n", cpustate->device->m_tag, unit); 
+		cpustate->int_pending[irq] = ASSERT_LINE;
+	}
+}
+
 
 /* Clock CT timers 
    decrement timers according to cycles elapsed in the last instruction execution
@@ -1583,7 +1630,6 @@ void clock_timers(struct z280_state *cpustate, int cycles)
 		UINT16 decr = cpustate->timer_cnt >>2;
 		cpustate->timer_cnt &= 3;
 
-		int linking = cpustate->ctcsr[0] & Z280_CTCR_CTC;
 		int i;
 		for (i=0; i<3; i++)
 		{
@@ -1591,56 +1637,18 @@ void clock_timers(struct z280_state *cpustate, int cycles)
 			   && (cpustate->ctcsr[i] & (Z280_CTCSR_EN | Z280_CTCSR_GT)) == (Z280_CTCSR_EN | Z280_CTCSR_GT)) // timer and gate enabled
 			{
 				UINT16 old = cpustate->ctctr[i];
-				if (i != 1 || !linking) // CT0,2 always decrement. CT1 only if not linked
+				if (i != 1 || !timer_linking) // CT0,2 always decrement. CT1 only if not linked
 				{
 					cpustate->ctctr[i] -= decr;
 				}
 
-				if(cpustate->ctctr[i] > old) // passed through 0
+				if(!cpustate->ctctr[i] || (old && cpustate->ctctr[i] > old)) // decremented to 0 or passed through 0
 				{
-					LOG("%s CT%d counted to 0\n", cpustate->device->m_tag, i);
-					if (cpustate->ctcsr[i] & Z280_CTCSR_CC)
-					{
-						cpustate->ctcsr[i] |= Z280_CTCSR_COR;
-					}
-					else
-					{
-						cpustate->ctcsr[i] |= Z280_CTCSR_CC;
-					}
-
-					if (i == 0 && linking)
-					{
-						cpustate->ctctr[1]--; // decrement high word in CT1
-					}
-					if (cpustate->ctcsr[i] & Z280_CTCR_CS) // continuous mode
-					{
-						z280_reload_timer(cpustate, i);
-					}
-
- 					// clock UART from CT1
-					if (i == 1 && (cpustate->device->z280uart->m_uartcr & 0x8) /*UARTCR_CS*/)
-					{
-						z280uart_device_timer(cpustate->device->z280uart);
-					}
-
-					if(cpustate->ctcr[i] & Z280_CTCR_IE)
-					{
-						int irq;
-						switch (i) {
-							case 0:
-								irq = Z280_INT_CTR0;
-								break;
-							case 1:
-								irq = Z280_INT_CTR1;
-								break;
-							case 2:
-								irq = Z280_INT_CTR2;
-								break;
-						}
-						LOG("%s CT%d assert interrupt\n", cpustate->device->m_tag, i); 
-						cpustate->int_pending[irq] = ASSERT_LINE;
-					}
-
+					terminal_count(cpustate, i);
+				}
+				if ((cpustate->ctcr[i] & Z280_CTCR_CS) && (!old || cpustate->ctctr[i] > old)) // continuous mode - decremented from 0 or passed through 0
+				{
+					z280_reload_timer(cpustate, i);
 				}
 			}
 		}
@@ -1651,10 +1659,10 @@ void clock_timers(struct z280_state *cpustate, int cycles)
 UINT32 get_brg_const_z280(struct z280_device *d)
 {
 	struct z280_state *cpustate = get_safe_token(d);
-	if ( cpustate->ctcr[0] & Z280_CTCR_CTC ) // linking
-		return cpustate->cttcr[0] | ((UINT32)cpustate->cttcr[1] << 16);
+	if ( timer_linking )
+		return ((UINT32)cpustate->cttcr[0] | ((UINT32)cpustate->cttcr[1] << 16)) + 1;
 	else
-		return cpustate->cttcr[1];
+		return (UINT32)cpustate->cttcr[1] + 1;
 }
 
 int check_interrupts(struct z280_state *cpustate)

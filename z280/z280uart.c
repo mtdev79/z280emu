@@ -549,15 +549,15 @@ unsigned int z280uart_device_get_brg_rate(struct z280uart_device *d)
 
 	if (d->m_uartcr & UARTCR_CS) // we use the CT1 as baudrate source
 	{
-		rate = cpu->m_clock / get_brg_const_z280(cpu);
-		LOG("   - Source bit rate = int CT1 (%d)\n", rate);
+		rate = (cpu->m_clock>>2) / get_brg_const_z280(cpu);
+		LOG("   - Source clk rate = int CT1 (%d)\n", rate);
 	}
 	else // we use the external clock (CTIN1 pin)
 	{
 		//unsigned int source = (d->m_index == 0) ? d->m_rxca : d->m_rxcb;
 		//rate = source / d->m_brg_const;
 		rate = ((struct z280_device *)d->m_owner)->m_ctin1;
-		LOG("   - Source bit rate = ext CTIN1 (%d)\n", rate);
+		LOG("   - Source clk rate = ext CTIN1 (%d)\n", rate);
 	}
 
 	return (rate / d->m_clock_divisor);
@@ -594,6 +594,6 @@ void z280uart_device_update_serial(struct z280uart_device *d)
 	//d->m_brg_const = z280uart_device_get_brg_const(d);
 	d->m_brg_rate = z280uart_device_get_brg_rate(d);
 
-	LOG("- BRG rate %d\n", d->m_brg_rate);
+	LOG("   - BRG rate %d\n", d->m_brg_rate);
 	set_rcv_rate(d,d->m_brg_rate);
 }
