@@ -326,10 +326,17 @@ void CloseIDE() {
 }
 
 void InitIDE() {
+   const char *devf = getenv("IDE0");
+
+   if (!devf) {
+     devf = "cf00.dsk";
+   }
    ic0=ide_allocate("IDE0");
-   if ((if00=fopen("cf00.dsk","r+b"))) {
-     ifd00=fileno(if00);
-     ide_attach(ic0,0,ifd00);
+   if ((if00 = fopen(devf, "r+b"))) {
+     ifd00 = fileno(if00);
+     ide_attach(ic0, 0, ifd00);
+   } else {
+     printf("New device file %s\n", devf);
    }
    ide_reset_begin(ic0);
    atexit(CloseIDE);
