@@ -35,6 +35,7 @@ int main(int argc, char** argv)
    size_t len, ilen;
    offs_t addr, i;
    char buf[80];
+   offs_t base = 0, code = 0;
 
    printf(";dis280 v1.0\n");
 
@@ -42,12 +43,21 @@ int main(int argc, char** argv)
       printf("Usage: dis280 filename [options]");
       exit(1);
    }
-   if ((f=fopen(argv[1],"rb"))) {
-      len = fread(_ram,1,131072,f);
-      printf(";%s: %d bytes\n",argv[1],len);
+   for (i = 0; i < argc; i++)
+   {
+      if (strncmp(argv[i],"-base=",6)==0) { /* load address of code seg, eg.0x100 */
+         base=strtol(argv[i]+6,NULL,16); 
+      } else if (strncmp(argv[i],"-code=",6)==0) { /* phys offset of code seg in input file */
+         code=strtol(argv[i]+6,NULL,16); 
+      }
+   }
+   if ((f=fopen(argv[i-1],"rb"))) {
+      fseek(f,code,SEEK_SET);
+      len = fread(_ram+base,1,131072-base,f);
+      printf(";%s: %d code bytes\n",argv[i-1],len);
       fclose(f);
    }
-   for (addr=0; addr<len; ) {
+   for (addr=base; addr<len+base; ) {
       ilen = cpu_disassemble_z280(NULL, buf, addr, &_ram[addr], 0)&DASMFLAG_LENGTHMASK;
       printf("%04x:\t",addr);
       for (i=0;i<ilen;i++) printf("%02X",_ram[addr+i]);
