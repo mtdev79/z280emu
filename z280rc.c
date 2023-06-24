@@ -326,8 +326,12 @@ void CloseIDE() {
 }
 
 void InitIDE() {
+   char *ifn00 = getenv("IDE00");
+   if (!ifn00) ifn00="cf00.dsk";
+
    ic0=ide_allocate("IDE0");
-   if ((if00=fopen("cf00.dsk","r+b"))) {
+   printf("Attaching IDE00: %s\n",ifn00);
+   if ((if00=fopen(ifn00,"r+b"))) {
      ifd00=fileno(if00);
      ide_attach(ic0,0,ifd00);
    }
