@@ -712,7 +712,7 @@ offs_t cpu_disassemble_z280(device_t *device, char *buffer, offs_t pc, const UIN
 			switch( *src )
 			{
 			case '?':   /* illegal opcode */
-				dst += sprintf( dst, "$%02x,$%02x", op, op1);
+				dst += sprintf( dst, "$%02X,$%02X", op, op1);
 				break;
 			case 'A':   /* Absolute word address */
 				ea = opram[pos] + ( opram[pos+1] << 8);
@@ -735,12 +735,12 @@ offs_t cpu_disassemble_z280(device_t *device, char *buffer, offs_t pc, const UIN
 				break;
 			case 'O':   /* Byte Offset relative to PC */
 				offset = (INT8) opram[pos++];
-				dst += sprintf( dst, "$%06X", PC + offset + 2 );
+				dst += sprintf( dst, "$%04X", PC + offset + 2 );
 				break;
 			case 'Q':   /* Word offset relative to PC, program space */
 				offset = opram[pos] + ( opram[pos+1] << 8 );
 				pos += 2;
-				dst += sprintf( dst, "$%06X", PC + offset + 2 );
+				dst += sprintf( dst, "$%04X", PC + offset + 2 );
 				break;
 			case 'P':   /* Port number */
 				ea = opram[pos++];
@@ -758,7 +758,7 @@ offs_t cpu_disassemble_z280(device_t *device, char *buffer, offs_t pc, const UIN
 			case 'X':	/* (ix+nn) (iy+nn) */
 				offset = (INT8) opram[pos++];
 			case 'Y':
-				dst += sprintf( dst,"(%s%c$%02x)", ixy, sign(offset), offs(offset) );
+				dst += sprintf( dst,"(%s%c$%02X)", ixy, sign(offset), offs(offset) );
 				break;
 			case 'I':
 				dst += sprintf( dst, "%s", ixy);

@@ -37,7 +37,9 @@ void debugger_instruction_hook(device_t *device, offs_t curpc) {
 	offs_t dres,i;
 	char fbuf[10];
 	UINT8 *mem = NULL;
-	offs_t transpc;
+	offs_t transpc, transea;
+	enum address_spacenum eseg;
+	int ilen;
 
 	instrcnt++;
 	do_timers();
@@ -57,24 +59,57 @@ void debugger_instruction_hook(device_t *device, offs_t curpc) {
 		transpc = curpc;
 		cpu_translate_z280(device,AS_PROGRAM,0,&transpc);
 		mem = RAMARRAY;
-		dres = cpu_disassemble_z280(device,ibuf,transpc,&mem[transpc],0);
-		printf("%06X: ",transpc);
-		for (i=0;i<(dres &DASMFLAG_LENGTHMASK);i++) printf("%02X",mem[transpc+i]);
+		dres = cpu_disassemble_z280(device,ibuf,curpc,&mem[transpc],0);
+		printf("%04X=%06X: ",curpc,transpc);
+		ilen = dres &DASMFLAG_LENGTHMASK;
+		for (i=0;i<ilen;i++) printf("%02X",mem[transpc+i]);
 		for ( ;i<7;i++) {putchar(' ');putchar(' ');}
-		printf(" %s\n",ibuf);
-		/*if (strstr(ibuf,",(hl)")||strstr(ibuf," (hl)")||strstr(ibuf,"ldi")||strstr(ibuf,"ldd"))
-			printf("\tm:%02X",debugger_getmem(device, cpu_get_state_z280(device,Z280_HL)));
-		else if (strstr(ibuf,",(de)"))
-			printf("\tm:%02X",debugger_getmem(device, cpu_get_state_z280(device,Z280_DE)));
-		else if (strstr(ibuf,",(bc)"))
-			printf("\tm:%02X",debugger_getmem(device, cpu_get_state_z280(device,Z280_BC)));
-		else if (strstr(ibuf,",(ix"))
-			printf("\tm:%02X",debugger_getmem(device, cpu_get_state_z280(device,Z280_IX)+(int8_t)mem[transpc+2]));
-		else if (strstr(ibuf,",(iy"))
-			printf("\tm:%02X",debugger_getmem(device, cpu_get_state_z280(device,Z280_IY)+(int8_t)mem[transpc+2]));
-		else if (strstr(ibuf,"(sp),"))	  // ex (sp),...
-			printf("\tm:%02X",debugger_getmem(device, cpu_get_state_z280(device,Z280_SP)));
-		putchar('\n');*/
+		int nn=printf(" %s",ibuf);
+		if(strchr(ibuf,'(')) {
+			eseg=-1;
+			if (ibuf[0]!='j'&&ibuf[0]!='c'&&!(ibuf[0]=='l'&&ibuf[2]=='a')) {// jp, jr, call, lda
+				if (strstr(ibuf,"(hl)")) {
+					transea = cpu_get_state_z280(device,Z280_HL);
+					eseg=AS_DATA;
+				} else if (strstr(ibuf,"(de)")) {
+					transea = cpu_get_state_z280(device,Z280_DE);
+					eseg=AS_DATA;
+				} else if (strstr(ibuf,"(bc)")) {
+					transea = cpu_get_state_z280(device,Z280_BC);
+					eseg=AS_DATA;
+				} else if (strstr(ibuf,"(ix")) {
+					transea = cpu_get_state_z280(device,Z280_IX)+(int8_t)mem[transpc+2];
+					eseg=AS_DATA;
+				} else if (strstr(ibuf,"(iy")) {
+					transea = cpu_get_state_z280(device,Z280_IY)+(int8_t)mem[transpc+2];
+					eseg=AS_DATA;
+				} else if (strstr(ibuf,"(sp)")) {	  // ex (sp),...
+					transea = cpu_get_state_z280(device,Z280_SP);
+					eseg=AS_DATA;
+				} else if (strstr(ibuf,"(sp")) {
+					transea = cpu_get_state_z280(device,Z280_SP)+(int16_t)mem[transpc+2];
+					eseg=AS_DATA;
+				} else if (ibuf[0]!='o'&&ibuf[0]!='i'&&strstr(ibuf,"($")) {	// abs indirect
+					transea = (int16_t)mem[transpc+ilen-2];
+					eseg=AS_DATA;
+				}
+			}
+			if (eseg!=-1) {
+				for (i=nn;i<28;i++) {putchar(' ');}
+				cpu_translate_z280(device,eseg,0,&transea);
+				printf("ea=%06X\n",transea);
+			} else
+				putchar('\n');
+		} else if (ibuf[0]=='l'&&ibuf[1]=='d'&&(ibuf[2]=='i'||ibuf[2]=='d')) {
+			for (i=nn;i<28;i++) {putchar(' ');}
+			transea = cpu_get_state_z280(device,Z280_DE);
+			cpu_translate_z280(device,AS_DATA,0,&transea);
+			printf("eade=%06X ",transea);
+			transea = cpu_get_state_z280(device,Z280_HL);
+			cpu_translate_z280(device,AS_DATA,0,&transea);
+			printf("eahl=%06X\n",transea);
+		} else
+			putchar('\n');
 		fflush(stdout);
 	}
 }

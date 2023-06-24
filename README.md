@@ -51,7 +51,6 @@ Serial ports are implemented as **byte-oriented streams over a raw TCP socket** 
 
 ### TODO (unimplemented)  
 UART bootstrap (currently only RAM/memory-mapped boot is supported)  
-better page/EA display in tracer  
 cleanup Z-BUS/Z80 bus modes (Z-BUS instr fetches should be WORD, ugh)  
 cleanup 8-bit/16-bit internal IO (DMA etc.)  
 cache memory (so far unimplemented on purpose, likely not needed and slows emulation down)  
