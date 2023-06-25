@@ -1,0 +1,10 @@
+*.o
+*.bin
+*.dsk
+*.img.gz
+dis280
+makedisk
+z280rc
+ZZMon.hex
+ZZmon.asm
+*.zip
